@@ -49,13 +49,13 @@ exports.createHotel = async (req,res,next) => {
 
 
 exports.updateHotel = async(req,res,next) => {
-    if(req.user.role !== 'admin' && req.user.role !== 'hotel'){
+    if(req.user.role !== 'admin' && req.user.role !== 'hotelOwner'){
         res.status(403).json({
             success:false,
             msg:"Not authorized to access this path"
         })
     }
-    if(req.user.role === 'hotel' && req.user.id !== req.params.ownerID){
+    if(req.user.role === 'hotelOwner' && req.user.id !== req.params.ownerID){
         res.status(403).json({
             success:false,
             msg:"Not authorized to access this path"

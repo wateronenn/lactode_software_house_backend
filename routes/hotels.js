@@ -10,7 +10,7 @@ router.route('/')
     .post(protect,authorize('admin'),createHotel)
 router.route('/:id')
     .get(getSingleHotel)
-    .put(protect,authorize('admin','hotel'),updateHotel)
+    .put(protect,authorize('admin','hotelOwner'),updateHotel)
     .delete(protect,authorize('admin'),deleteHotel)
 
 module.exports = router;
