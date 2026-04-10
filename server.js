@@ -1,36 +1,70 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
-const cookieParser = require('cookie-parser')
-const helmet = require('helmet');
-const {xss} = require('express-xss-sanitizer');
-const rateLimit = require('express-rate-limit');
-const hpp = require('hpp');
-const cors = require('cors');
-dotenv.config({path : './config/config.env'});
+const { setServers } = require("node:dns/promises");
+setServers(["1.1.1.1", "8.8.8.8"]);
 
+const express = require("express");
+const dotenv = require("dotenv");
+const cookieParser = require("cookie-parser");
+const connectDB = require("./config/db");
+const helmet = require("helmet");
+const { xss } = require("express-xss-sanitizer");
+
+//Load env vars
+dotenv.config({ path: "./config/config.env" });
+//Connect to database
 connectDB();
 
-const limiter = rateLimit({
-    windowMs : 10*60*1000, //10 mins,
-    max : 10000
-});
-
+//Route files
+const auth = require("./routes/auth");
+const bookings = require("./routes/bookings");
+const hotels = require("./routes/hotels");
+const mongoSanitize = require("express-mongo-sanitize");
 const app = express();
-app.use(helmet());
+const rateLimit = require("express-rate-limit");
+//Body parser
 app.use(express.json());
 app.use(cookieParser());
+app.use(helmet());
+app.use(mongoSanitize());
 app.use(xss());
-app.use(limiter);
-app.use(hpp());
-app.use(cors());
+// General API limiter (whole API)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,                 // per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-app.set('query parser','extended');
+// Stricter limiter for auth endpoints (login/register)
+const authLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 20,                  // per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many attempts, please try again later." },
+});
 
-const PORT = process.env.PORT || 5000; //change to 5003 in macOS
-const server  = app.listen(PORT,console.log('Server is running in : ', process.env.NODE_ENV,' mode_on_port : ', PORT));
+app.use("/api", apiLimiter);
+app.use("/api/v1/auth", authLimiter);
 
-process.on('unhandledRejection', ( err,promise) => {
-    console.log(`Error:${err.message}`);
-    server.close(()=>process.exit(1));
-})
+app.use("/api/v1/bookings", bookings);
+app.use("/api/v1/hotels", hotels);
+app.use("/api/v1/auth", auth);
+app.set("query parser", "extended");
+const PORT = process.env.PORT || 5000;
+
+const server = app.listen(
+  PORT,
+  console.log(
+    "Server running in ",
+    process.env.NODE_ENV,
+    " mode on port ",
+    PORT,
+  ),
+);
+
+//Handle unhandled promise rejections
+process.on("unhandledRejection", (err, promise) => {
+  console.log(`Error: ${err.message}`);
+  //Close server & exit process
+  server.close(() => process.exit(1));
+});

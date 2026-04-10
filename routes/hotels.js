@@ -1,5 +1,16 @@
 const express = require('express');
-const {} = require('../controllers/auth');
+const {getManyHotels,getSingleHotel,createHotel,updateHotel,deleteHotel} = require('../controllers/hotels');
 const router = express.Router();
-const {protect} = require('../middleware/auth');
+const {protect,authorize} = require('../middleware/auth');
+const roomRouter = require('./rooms')
 
+router.use('/:hotelId/rooms',roomRouter) // override path for room under the management of hotel
+router.use('/')
+    .get(getManyHotels)
+    .post(protect,authorize('admin'),createHotel)
+router.use('/:id')
+    .get(getSingleHotel)
+    .put(protect,authorize('admin','hotel'),updateHotel)
+    .delete(protect,authorize('admin'),deleteHotel)
+
+module.exports = router;
