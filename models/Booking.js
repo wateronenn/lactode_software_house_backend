@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const BookingSchema = new mongoose.Schema(
   {
     // Booking Reference
-    bookingCode: {
+    bookingID: {
       type: String,
       unique: true,
       sparse: true,
@@ -18,14 +18,14 @@ const BookingSchema = new mongoose.Schema(
     },
 
     // Hotel Information
-    hotel: {
+    hotelID: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Hotel',
       required: [true, 'Booking must be associated with a hotel']
     },
 
     // Room Information
-    room: {
+    roomID: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Room',
       required: [true, 'Booking must be associated with a room']
@@ -45,14 +45,6 @@ const BookingSchema = new mongoose.Schema(
         },
         message: 'Check-out date must be after check-in date'
       }
-    },
-
-    // Number of Guests
-    numberOfGuests: {
-      type: Number,
-      required: [true, 'Please provide number of guests'],
-      min: [1, 'Minimum 1 guest required'],
-      max: [10, 'Maximum 10 guests allowed']
     },
 
     // Timestamps
