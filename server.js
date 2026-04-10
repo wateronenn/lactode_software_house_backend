@@ -24,12 +24,6 @@ app.use(xss());
 app.use(limiter);
 app.use(hpp());
 app.use(cors());
-const carRentals = require('./routes/carRentals');
-const auth = require('./routes/auth');
-const rents = require('./routes/rents');
-app.use('/api/v1/carRentals',carRentals);
-app.use('/api/v1/auth',auth);
-app.use('/api/v1/rents',rents);
 
 app.set('query parser','extended');
 
