@@ -49,7 +49,34 @@ exports.createHotel = async (req,res,next) => {
 
 
 exports.updateHotel = async(req,res,next) => {
+    if(req.user.role !== 'admin' && req.user.role !== 'hotel'){
+        res.status(403).json({
+            success:false,
+            msg:"Not authorized to access this path"
+        })
+    }
+    if(req.user.role === 'hotel' && req.user.id !== req.params.ownerID){
+        res.status(403).json({
+            success:false,
+            msg:"Not authorized to access this path"
+        })
+    }
+    try{
+        const hotel = await Hotel.findByIdAndUpdate(req.params.id,req.body,{
+            new:true,
+            runValidators:true 
+        });
 
+        if(!hotel){
+            return res.status(400).json({success:false});
+        }
+        res.status(200).json({success:true,data:hotel});
+    }catch (err){
+        res.status(400).json({
+            success:false,
+            msg:`Cannot update hotel : {$err}`
+        })
+    }
 }
 
 
@@ -61,3 +88,5 @@ exports.updateHotel = async(req,res,next) => {
 exports.deleteHotel = async(req,res,next) => {
 
 }
+
+
