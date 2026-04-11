@@ -1,22 +1,99 @@
 const Hotel = require('../models/Hotel')
 
-
-// @desc    view all hotel
-// @route   GET api/v1/hotels
+// @desc    view all hotels
+// @route   GET /api/v1/hotels
 // @access  Public
-exports.getManyHotels = async(req,res,next) => {
+exports.getManyHotels = async (req, res, next) => {
+    try {
+        const queryObj = { ...req.query }
 
+        // Remove special fields before filtering
+        const removeFields = ['select', 'sort', 'page', 'limit']
+        removeFields.forEach(param => delete queryObj[param])
+
+        // Convert operators e.g. gt -> $gt
+        let queryStr = JSON.stringify(queryObj)
+        queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`)
+
+        // Build query
+        let query = Hotel.find(JSON.parse(queryStr))
+
+        // Handle SELECT (field projection)
+        if (req.query.select) {
+            const fields = req.query.select.split(',').join(' ')
+            query = query.select(fields)
+        }
+
+        // Handle SORT
+        if (req.query.sort) {
+            const sortBy = req.query.sort.split(',').join(' ')
+            query = query.sort(sortBy)
+        } else {
+            query = query.sort('-createdAt') // default: newest first
+        }
+
+        // Handle PAGINATION
+        const page = parseInt(req.query.page, 10) || 1
+        const limit = parseInt(req.query.limit, 10) || 10
+        const skip = (page - 1) * limit
+        const total = await Hotel.countDocuments(JSON.parse(queryStr))
+        const totalPages = Math.ceil(total / limit)
+
+        query = query.skip(skip).limit(limit)
+
+        // Execute query
+        const hotels = await query
+
+        res.status(200).json({
+            success: true,
+            count: hotels.length,
+            total,
+            totalPages,
+            currentPage: page,
+            data: hotels
+        })
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            msg: err.message
+        })
+    }
 }
 
 
-
-// @desc    view single user
+// @desc    view single hotel
 // @route   GET /api/v1/hotels/:id
 // @access  Public
-exports.getSingleHotel = async(req,res,next) => {
+exports.getSingleHotel = async (req, res, next) => {
+    try {
+        const hotel = await Hotel.findById(req.params.id)
 
+        if (!hotel) {
+            return res.status(404).json({
+                success: false,
+                msg: 'Hotel not found'
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            data: hotel
+        })
+    } catch (err) {
+        // Handle invalid MongoDB ObjectId format
+        if (err.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                msg: `Invalid hotel ID format: ${req.params.id}`
+            })
+        }
+
+        res.status(500).json({
+            success: false,
+            msg: err.message
+        })
+    }
 }
-
 // @desc    create hotel
 // @route   POST api/v1/hotels
 // @access  admin
