@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const helmet = require("helmet");
-const { xss } = require("express-xss-sanitizer");
+const {xss} = require("express-xss-sanitizer");
 
 //Load env vars
 dotenv.config({ path: "./config/config.env" });
@@ -15,7 +15,7 @@ connectDB();
 
 //Route files
 const auth = require("./routes/auth");
-const bookings = require("./routes/bookings");
+// const bookings = require("./routes/bookings");
 const hotels = require("./routes/hotels");
 const mongoSanitize = require("express-mongo-sanitize");
 const app = express();
@@ -24,7 +24,7 @@ const rateLimit = require("express-rate-limit");
 app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
-app.use(mongoSanitize());
+// app.use(mongoSanitize());
 app.use(xss());
 // General API limiter (whole API)
 const apiLimiter = rateLimit({
@@ -46,7 +46,7 @@ const authLimiter = rateLimit({
 app.use("/api", apiLimiter);
 app.use("/api/v1/auth", authLimiter);
 
-app.use("/api/v1/bookings", bookings);
+// app.use("/api/v1/bookings", bookings);
 app.use("/api/v1/hotels", hotels);
 app.use("/api/v1/auth", auth);
 app.set("query parser", "extended");
