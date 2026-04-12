@@ -98,7 +98,7 @@ exports.getSingleBooking = async (req, res, next) => {
 // @access  user
 exports.addBooking = async (req, res, next) => {
   try {
-    req.body.hotel = req.params.hotelId;
+    req.body.hotel = req.params.hotelID;
 
     const hotel = await Hotel.findById(req.params.hotelID);
     if (!hotel) {
