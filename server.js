@@ -17,14 +17,12 @@ connectDB();
 const auth = require("./routes/auth");
 const bookings = require("./routes/bookings");
 const hotels = require("./routes/hotels");
-const mongoSanitize = require("express-mongo-sanitize");
 const app = express();
 const rateLimit = require("express-rate-limit");
 //Body parser
 app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
-app.use(mongoSanitize());
 app.use(xss());
 // General API limiter (whole API)
 const apiLimiter = rateLimit({
