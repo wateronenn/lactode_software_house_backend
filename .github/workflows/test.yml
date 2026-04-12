@@ -30,6 +30,6 @@ jobs:
 
       - name: Run tests
         env:
-          MONGO_URL: mongodb://localhost:27017/testdb
-          JWT_SECRET: your_jwt_secret
+            MONGO_URL: ${{ secrets.MONGO_URL }}
+            JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: npm test
