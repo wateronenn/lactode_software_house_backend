@@ -9,14 +9,14 @@ const Room = require('../models/Room')
 // @access  Public
 exports.getSingleRoom = async (req, res) => {
     try {
-        const room = await Room.findById(req.params.id).populate('hotelID', 'name address');
+        const room = await Room.findById(req.params.id).populate('hotelID', 'name location');
 
         if (!room) {
             return res.status(404).json({ success: false, message: 'Room not found' });
         }
 
         // Make sure the room actually belongs to the hotel in the URL
-        if (room.hotelID._id.toString() !== req.params.hotelId) {
+        if (room.hotelID._id.toString() !== req.params.hotelID) {
             return res.status(400).json({ success: false, message: 'Room does not belong to this hotel' });
         }
 
@@ -42,7 +42,7 @@ exports.updateRoom = async (req, res) => {
         }
 
         // Make sure the room belongs to the hotel in the URL
-        if (room.hotelID.toString() !== req.params.hotelId) {
+        if (room.hotelID.toString() !== req.params.hotelID) {
             return res.status(400).json({ success: false, message: 'Room does not belong to this hotel' });
         }
 
