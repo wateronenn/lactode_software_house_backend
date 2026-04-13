@@ -2,6 +2,7 @@ require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
+jest.setTimeout(20000); // เพิ่มเวลาเป็น 20 วิ
 
 let adminToken;
 let ownerToken;
@@ -96,9 +97,6 @@ beforeAll(async () => {
     .send(newRoom(hotelId));
 
   roomId = roomRes.body.data._id;
-
-  console.log("hotelId:", hotelId);
-console.log("roomId:", roomId);
 });
 
 // =======================

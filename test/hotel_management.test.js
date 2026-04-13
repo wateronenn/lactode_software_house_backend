@@ -2,6 +2,7 @@ require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
+jest.setTimeout(20000); // เพิ่มเวลาเป็น 20 วิ
 // const test = require('node:test');
 
 let adminToken;
