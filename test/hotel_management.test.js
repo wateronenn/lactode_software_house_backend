@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '.env.test' });
+require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
@@ -46,7 +46,6 @@ const newRandomHotel = () => ({
 });
 
 beforeAll(async () => {
-  console.log("MONGO_URL:", process.env.MONGO_URL);
   await mongoose.connect(process.env.MONGO_URL);
 
   // 🔐 login admin
