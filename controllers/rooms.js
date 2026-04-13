@@ -18,7 +18,7 @@ exports.getSingleRoom = async (req, res) => {
         }
 
         // Make sure the room actually belongs to the hotel in the URL
-        if (room.hotelID._id.toString() !== req.params.hotelId) {
+        if (room.hotelID._id.toString() !== req.params.hotelID) {
             return res.status(400).json({ success: false, message: 'Room does not belong to this hotel' });
         }
 
@@ -33,7 +33,7 @@ exports.getSingleRoom = async (req, res) => {
 // @access  hotel
 exports.createRoom = async (req, res) => {
     try {
-        const hotel = await Hotel.findById(req.params.hotelId);
+        const hotel = await Hotel.findById(req.params.hotelID);
         if (!hotel) {
             return res.status(404).json({ success: false, message: 'Hotel not found' });
         }
@@ -42,10 +42,10 @@ exports.createRoom = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Not authorized to create room in this hotel' });
         }
 
-        req.body.hotelID = req.params.hotelId;
+        req.body.hotelID = req.params.hotelID;
         const room = await Room.create(req.body);
 
-        await Hotel.findByIdAndUpdate(req.params.hotelId, {
+        await Hotel.findByIdAndUpdate(req.params.hotelID, {
             $push: { rooms: room._id }
         });
 
@@ -72,7 +72,7 @@ exports.updateRoom = async (req, res) => {
         }
 
         // Make sure the room belongs to the hotel in the URL
-        if (room.hotelID.toString() !== req.params.hotelId) {
+        if (room.hotelID.toString() !== req.params.hotelID) {
             return res.status(400).json({ success: false, message: 'Room does not belong to this hotel' });
         }
 
