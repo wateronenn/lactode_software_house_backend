@@ -5,6 +5,8 @@ const app = require('../app');
 jest.setTimeout(20000); // เพิ่มเวลาเป็น 20 วิ
 // const test = require('node:test');
 
+const fakeHotelId = new mongoose.Types.ObjectId();
+
 let adminToken;
 let ownerToken;
 let ownerToken2;    
@@ -162,10 +164,11 @@ describe('Hotel API (Integration Advanced)', () => {
   // ❌ GET INVALID ID
   test('GET not exist hotel', async () => {
     const res = await request(app)
-      .get('/api/v1/hotels/64b8c9f9f9f9f9f9f9f9f9f') // ID ที่ไม่มีใน DB
+      .get(`/api/v1/hotels/${fakeHotelId}`)
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(404);
+
   });
 
   // ✅ UPDATE (admin)
