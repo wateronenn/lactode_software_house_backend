@@ -2,6 +2,7 @@ require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
+// const test = require('node:test');
 
 let adminToken;
 let ownerToken;
@@ -9,6 +10,8 @@ let userToken;
 
 let hotelId;
 let roomId;
+let hotelId2;
+let roomId2;
 
 // =======================
 //  DATA GENERATORS
@@ -61,6 +64,11 @@ beforeAll(async () => {
     .post('/api/v1/auth/login')
     .send({ identifier: 'owner@gmail.com', password: '123456' });
   ownerToken = ownerRes.body.token;
+  
+  const ownerRes2 = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ identifier: 'owner2@gmail.com', password: '123456' });
+  ownerToken2 = ownerRes2.body.token;
 
   //user
   const userRes = await request(app)
@@ -73,18 +81,26 @@ beforeAll(async () => {
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
     .send(newHotel());
-
   hotelId = hotelRes.body.data._id;
+
+  const hotelRes2 = await request(app)
+    .post('/api/v1/hotels')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send(newHotel());
+  hotelId2 = hotelRes2.body.data._id;
+
+  const roomRes = await request(app)
+    .post(`/api/v1/hotels/${hotelId}/rooms`)
+    .set('Authorization', `Bearer ${ownerToken}`)
+    .send(newRoom(hotelId));
+  roomId = roomRes.body.data._id;
+
+  const roomRes2 = await request(app)
+    .post(`/api/v1/hotels/${hotelId2}/rooms`)
+    .set('Authorization', `Bearer ${ownerToken}`)
+    .send(newRoom(hotelId2));
+  roomId2 = roomRes2.body.data._id;
 });
-
-// afterAll(async () => {
-//   // cleanup hotel
-//   await request(app)
-//     .delete(`/api/v1/hotels/${hotelId}`)
-//     .set('Authorization', `Bearer ${adminToken}`);
-
-//   await mongoose.connection.close();
-// });
 
 // =======================
 // 🧪 TEST
@@ -113,6 +129,44 @@ describe('Room API (Integration)', () => {
     expect(res.statusCode).toBe(200);
   });
 
+  test('GET all rooms (hotelOwner)', async () => {
+    const res = await request(app)
+      .get(`/api/v1/hotels/${hotelId}/rooms`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(res.statusCode).toBe(200);
+
+  });
+
+  // ===================
+  //  GET SINGLE
+  // ===================
+
+  test('GET single room', async () => {
+    const res = await request(app)
+      .get(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .set('Authorization', `Bearer ${userToken}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toHaveProperty('_id', roomId);
+  });
+
+  test('GET single room not belong to hotel', async () => {
+    const res = await request(app)
+      .get(`/api/v1/hotels/${hotelId}/rooms/${roomId2}`) // ID ที่ไม่ใช่ของโรงแรมนี้
+      .set('Authorization', `Bearer ${userToken}`);
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('GET single room not exist', async () => {
+    const res = await request(app)
+      .get(`/api/v1/hotels/${hotelId}/rooms/123456789012345678901234`) // ID ที่ไม่มีใน DB
+      .set('Authorization', `Bearer ${userToken}`);
+
+    expect(res.statusCode).toBe(404);
+  });
+
   // ===================
   // ✅ CREATE
   // ===================
@@ -126,6 +180,28 @@ describe('Room API (Integration)', () => {
     expect(res.statusCode).toBe(201);
     roomId = res.body.data._id;
   });
+
+  //** invalid */
+
+  test('create room but hotel not found', async () => {
+    const res = await request(app)
+      .post(`/api/v1/hotels/123456789012345678901234/rooms`) // ID ที่ไม่มีใน DB
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send(newRoom("123456789012345678901234"));
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  test('create room but not owner of hotel', async () => {
+    const res = await request(app)
+      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .set('Authorization', `Bearer ${ownerToken2}`) // token ของเจ้าของโรงแรมอื่น
+      .send(newRoom(hotelId));
+
+    expect(res.statusCode).toBe(403);
+  });
+
+
 
   // ===================
   // ❌ INVALID CREATE (wrong role)
@@ -180,14 +256,14 @@ describe('Room API (Integration)', () => {
   });
 
   test('CREATE room invalid hotelID', async () => {
-    const badRoom = newRoom("123456789012345678901234");
+    const badRoom = newRoom(hotelId);
 
     const res = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/123456789012345678901234/rooms`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(badRoom);
 
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(404);
   });
 
   test('CREATE room negative price', async () => {
@@ -215,7 +291,7 @@ describe('Room API (Integration)', () => {
       .send({ price: 2000 });
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.data).toHaveProperty('price',200);
+    expect(res.body.data).toHaveProperty('price',2000);
   });
 
   test('UPDATE room (user fail)', async () => {
@@ -243,7 +319,10 @@ describe('Room API (Integration)', () => {
       .send({ price: 2000 });
 
     expect([400, 404]).toContain(res.statusCode);
+
+  
   });
+
 
   // ===================
   // ✅ DELETE

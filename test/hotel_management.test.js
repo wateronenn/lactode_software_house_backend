@@ -2,6 +2,7 @@ require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
+// const test = require('node:test');
 
 let adminToken;
 let ownerToken;
@@ -126,26 +127,44 @@ describe('Hotel API (Integration Advanced)', () => {
   });
 
   // ✅ GET ALL
-  test('GET all hotels', async () => {
-    const res = await request(app).get('/api/v1/hotels');
+  test('GET all hotels(user)', async () => {
+    const res = await request(app)
+    .get('/api/v1/hotels')
+    .set('Authorization', `Bearer ${userToken}`);
+    expect(res.statusCode).toBe(200);
+  });
+
+  test('GET all hotels (admin)', async () => {
+    const res = await request(app)
+      .get('/api/v1/hotels')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.statusCode).toBe(200);
+  });
+
+  test('GET all hotels (hotelOwner)', async () => {
+    const res = await request(app)
+      .get('/api/v1/hotels')
+      .set('Authorization', `Bearer ${ownerToken}`);
     expect(res.statusCode).toBe(200);
   });
 
   // ✅ GET SINGLE
   test('GET single hotel', async () => {
     const res = await request(app)
-      .get(`/api/v1/hotels/${hotelId}`);
+      .get(`/api/v1/hotels/${hotelId}`)
+      .set('Authorization', `Bearer ${userToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toHaveProperty('_id', hotelId);
   });
 
   // ❌ GET INVALID ID
-  test('GET single hotel invalid id', async () => {
+  test('GET not exist hotel', async () => {
     const res = await request(app)
-      .get('/api/v1/hotels/123');
+      .get('/api/v1/hotels/64b8c9f9f9f9f9f9f9f9f9f') // ID ที่ไม่มีใน DB
+      .set('Authorization', `Bearer ${adminToken}`);
 
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(404);
   });
 
   // ✅ UPDATE (admin)
