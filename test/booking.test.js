@@ -44,8 +44,9 @@ const newRoom = (hotelId) => ({
   people: 2
 });
 
-const newBooking = () => ({
+const newBooking = (userId, hotelId, roomId) => ({
   hotelID: hotelId,
+  user: userId,
   roomID: roomId,
   checkInDate: '2026-05-01',
   checkOutDate: '2026-05-05'
@@ -95,6 +96,9 @@ beforeAll(async () => {
     .send(newRoom(hotelId));
 
   roomId = roomRes.body.data._id;
+
+  console.log("hotelId:", hotelId);
+console.log("roomId:", roomId);
 });
 
 // =======================
@@ -123,7 +127,7 @@ describe('Booking API (Integration)', () => {
     const res = await request(app)
       .post('/api/v1/bookings')
       .set('Authorization', `Bearer ${userToken}`)
-      .send(newBooking());
+      .send(newBooking(userId, hotelId,roomId));
 
     expect(res.statusCode).toBe(201);
     bookingId = res.body.data._id;
