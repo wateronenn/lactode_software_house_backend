@@ -137,6 +137,7 @@ describe('Hotel API (Integration Advanced)', () => {
       .get(`/api/v1/hotels/${hotelId}`);
 
     expect(res.statusCode).toBe(200);
+    expect(res.body.data).toHaveProperty('_id', hotelId);
   });
 
   // ❌ GET INVALID ID
@@ -155,6 +156,7 @@ describe('Hotel API (Integration Advanced)', () => {
       .send({ name: "Updated Hotel" });
 
     expect(res.statusCode).toBe(200);
+    expect(res.body.data).toHaveProperty('name', "Updated Hotel");
   });
 
   // ❌ UPDATE (user → 403)
@@ -202,6 +204,8 @@ describe('Hotel API (Integration Advanced)', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual({});
   });
 
 });
