@@ -4,7 +4,7 @@ const router = express.Router();
 const {protect,authorize} = require('../middleware/auth');
 const roomRouter = require('./rooms')
 
-router.use('/:hotelId/rooms',roomRouter) // override path for room under the management of hotel
+router.use('/:hotelID/rooms',roomRouter) // override path for room under the management of hotel
 router.route('/')
     .get(getManyHotels)
     .post(protect,authorize('admin'),createHotel)
