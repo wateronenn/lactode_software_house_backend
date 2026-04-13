@@ -11,7 +11,7 @@ let hotelId;
 let roomId;
 
 // =======================
-// 🔥 DATA GENERATORS
+//  DATA GENERATORS
 // =======================
 
 const newHotel = () => ({
@@ -44,31 +44,31 @@ const newRoom = (hotelId) => ({
 });
 
 // =======================
-// 🔥 SETUP / TEARDOWN
+// SETUP / TEARDOWN
 // =======================
 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_URL);
 
-  // 🔐 admin
+  //admin
   const adminRes = await request(app)
     .post('/api/v1/auth/login')
     .send({ identifier: 'admin1@gmail.com', password: '123456' });
   adminToken = adminRes.body.token;
 
-  // 🔐 owner
+  //owner
   const ownerRes = await request(app)
     .post('/api/v1/auth/login')
     .send({ identifier: 'owner@gmail.com', password: '123456' });
   ownerToken = ownerRes.body.token;
 
-  // 🔐 user
+  //user
   const userRes = await request(app)
     .post('/api/v1/auth/login')
     .send({ identifier: 'user@gmail.com', password: '123456' });
   userToken = userRes.body.token;
 
-  // 🏨 create hotel
+  //create hotel
   const hotelRes = await request(app)
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
@@ -102,6 +102,7 @@ describe('Room API (Integration)', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
+    expect(res.body.data).toBeInstanceOf(Array);
   });
 
   test('GET all rooms (user)', async () => {
@@ -214,6 +215,7 @@ describe('Room API (Integration)', () => {
       .send({ price: 2000 });
 
     expect(res.statusCode).toBe(200);
+    expect(res.body.data).toHaveProperty('price',200);
   });
 
   test('UPDATE room (user fail)', async () => {
