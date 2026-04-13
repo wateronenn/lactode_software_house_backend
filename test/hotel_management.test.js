@@ -46,6 +46,7 @@ const newRandomHotel = () => ({
 });
 
 beforeAll(async () => {
+  console.log("MONGO_URL:", process.env.MONGO_URL);
   await mongoose.connect(process.env.MONGO_URL);
 
   // 🔐 login admin
