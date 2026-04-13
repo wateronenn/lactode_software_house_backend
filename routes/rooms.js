@@ -1,11 +1,15 @@
 const express = require('express');
-const { getSingleRoom, updateRoom } = require('../controllers/rooms');
+const { getSingleRoom, createRoom, updateRoom, deleteRoom } = require('../controllers/rooms');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router({ mergeParams: true });
 
+router.route('/')
+    .post(protect, authorize('hotelOwner'), createRoom)
+
 router.route('/:id')
     .get(getSingleRoom)                                          
-    .put(protect, authorize('admin', 'hotelOwner'), updateRoom) 
+    .put(protect, authorize('hotelOwner'), updateRoom)
+    .delete(protect, authorize('hotelOwner'), deleteRoom)
 
 module.exports = router;
