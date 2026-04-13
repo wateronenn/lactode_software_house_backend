@@ -50,7 +50,7 @@ const newBooking = (userId, hotelId, roomId) => ({
   user: userId,
   roomID: roomId,
   checkInDate: '2026-05-01',
-  checkOutDate: '2026-05-05'
+  checkOutDate: '2026-05-02'
 });
 
 // =======================
@@ -81,6 +81,12 @@ beforeAll(async () => {
     .send({ identifier: 'user@gmail.com', password: '123456' });
   userToken = userRes.body.token;
   userId = userRes.body.user._id;
+
+  const userRes2 = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ identifier: 'userr@gmail.com', password: '123456' });
+  userToken2 = userRes2.body.token;
+  userId2 = userRes2.body.user._id;
 
   // 🏨 create hotel
   const hotelRes = await request(app)
@@ -147,8 +153,7 @@ describe('Booking API (Integration)', () => {
 
   res.body.data.forEach(booking => {
     expect(booking.user).toBeDefined();
-    expect(booking.user._id).toBeDefined();
-    expect(booking.user._id.toString()).toBe(userId.toString());
+    expect(booking.user.toString()).toBe(userId.toString());
   });
 });
 
@@ -173,7 +178,7 @@ test('Owner sees bookings in owned hotel', async () => {
 
   //3. check ทุก booking
   res.body.data.forEach(booking => {
-    expect(ownerHotelIds).toContain(booking.hotelID.toString());
+    expect(ownerHotelIds).toContain(booking.hotelID._id.toString());
   });
 
   });
@@ -207,7 +212,7 @@ test('Admin sees all bookings', async () => {
       .post('/api/v1/bookings')
       .set('Authorization', `Bearer ${userToken}`)
       .send({
-        ...newBooking(),
+        ...newBooking(userId, hotelId, roomId),
         hotelID: '123'
       });
 
@@ -260,7 +265,7 @@ test('Admin sees all bookings', async () => {
   test('User get single booking not belong', async () => {
     const res = await request(app)
       .get(`/api/v1/bookings/${bookingId}`)
-      .set('Authorization', `Bearer ${ownerToken}`);
+      .set('Authorization', `Bearer ${userToken2}`);
 
     expect(res.statusCode).toBe(403);
   });
@@ -278,7 +283,7 @@ test('Admin sees all bookings', async () => {
     const createRes = await request(app)
       .post('/api/v1/bookings')
       .set('Authorization', `Bearer ${userToken}`)
-      .send(newBooking());
+      .send(newBooking(userId, hotelId, roomId));
     const newBookingId = createRes.body.data._id;
 
     // ลบ booking
@@ -294,8 +299,8 @@ test('Admin sees all bookings', async () => {
         
     const createRes = await request(app)
       .post('/api/v1/bookings')
-      .set('Authorization', `Bearer ${userToken}`)
-      .send(newBooking());
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send(newBooking(userId, hotelId, roomId));
     const newBookingId = createRes.body.data._id;   
 
     // ลบ booking

@@ -8,7 +8,7 @@ router.use('/:hotelID/rooms',roomRouter) // override path for room under the man
 router.route('/')
     .get(getManyHotels)
     .post(protect,authorize('admin'),createHotel)
-router.route('/:id')
+router.route('/:hotelID')
     .get(getSingleHotel)
     .put(protect,authorize('admin','hotelOwner'),updateHotel)
     .delete(protect,authorize('admin'),deleteHotel)
