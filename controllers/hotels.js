@@ -125,36 +125,49 @@ exports.createHotel = async (req,res,next) => {
 // @access  admin , hotel owner
 
 
-exports.updateHotel = async(req,res,next) => {
-    if(req.user.role !== 'admin' && req.user.role !== 'hotelOwner'){
-        res.status(403).json({
-            success:false,
-            msg:"Not authorized to access this path"
-        })
-    }
-    if(req.user.role === 'hotelOwner' && req.user.id !== req.params.ownerID){
-        res.status(403).json({
-            success:false,
-            msg:"Not authorized to access this path"
-        })
-    }
-    try{
-        const hotel = await Hotel.findByIdAndUpdate(req.params.id,req.body,{
-            new:true,
-            runValidators:true 
+exports.updateHotel = async (req, res, next) => {
+    try {
+        const hotel = await Hotel.findById(req.params.id);
+
+        if (!hotel) {
+            return res.status(404).json({
+                success: false,
+                msg: "Hotel not found"
+            });
+        }
+
+        // 🔥 check permission
+        if (
+            req.user.role !== 'admin' &&
+            (req.user.role === 'hotelOwner' && hotel.ownerID.toString() !== req.user.id)
+        ) {
+            return res.status(403).json({
+                success: false,
+                msg: "Not authorized to access this path"
+            });
+        }
+
+        const updatedHotel = await Hotel.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        res.status(200).json({
+            success: true,
+            data: updatedHotel
         });
 
-        if(!hotel){
-            return res.status(400).json({success:false});
-        }
-        res.status(200).json({success:true,data:hotel});
-    }catch (err){
+    } catch (err) {
         res.status(400).json({
-            success:false,
-            msg:`Cannot update hotel : ${err.message}`
-        })
+            success: false,
+            msg: `Cannot update hotel : ${err}`
+        });
     }
-}
+};
 
 
 
