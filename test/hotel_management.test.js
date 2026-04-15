@@ -171,6 +171,14 @@ describe('Hotel API (Integration Advanced)', () => {
 
   });
 
+  test('GET single hotel (invalid ID)', async () => {
+    const res = await request(app)
+      .get('/api/v1/hotels/123') // ID ที่ไม่ใช่ ObjectId
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.statusCode).toBe(400);
+  });
+
   // ✅ UPDATE (admin)
   test('UPDATE hotel (admin)', async () => {
     const res = await request(app)
