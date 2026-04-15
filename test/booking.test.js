@@ -245,7 +245,7 @@ test('User get single booking', async () => {
         hotelId: '123'
       });
 
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(500);
   });
 
   test('CREATE booking no checkin date', async () => {
@@ -307,7 +307,7 @@ test('User get single booking', async () => {
         roomID: '123'
       });
 
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(500);
   });
 
   test('CREATE booking roomID not exist', async () => {

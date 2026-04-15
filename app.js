@@ -16,7 +16,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
-app.use(xss());
+// app.use(xss()); //cant use xss because it will cause problem with query string in GET /api/v1/hotels
 
 // Rate limiters
 const apiLimiter = rateLimit({

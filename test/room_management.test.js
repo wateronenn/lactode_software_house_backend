@@ -3,10 +3,10 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
 jest.setTimeout(20000); // เพิ่มเวลาเป็น 20 วิ
-// const test = require('node:test');
 
 let adminToken;
 let ownerToken;
+let ownerToken2;
 let userToken;
 
 let hotelId;
@@ -14,15 +14,18 @@ let roomId;
 let hotelId2;
 let roomId2;
 
+let owerId;
+let owerId2;
+
 // =======================
 //  DATA GENERATORS
 // =======================
 
-const newHotel = () => ({
+const newHotel = (ownerId) => ({
   name: `Hotel_${Date.now()}`,
   description: "Test hotel",
   location: "Bangkok",
-  ownerID: "69da0c7ff8190a65bcf5db14",
+  ownerID: ownerId,
   tel: `08${Math.floor(10000000 + Math.random()*90000000)}`,
   email: `hotel${Date.now()}@mail.com`,
   district: "Watthana",
@@ -65,11 +68,13 @@ beforeAll(async () => {
     .post('/api/v1/auth/login')
     .send({ identifier: 'owner@gmail.com', password: '123456' });
   ownerToken = ownerRes.body.token;
+  ownerID = ownerRes.body.user._id;
   
   const ownerRes2 = await request(app)
     .post('/api/v1/auth/login')
     .send({ identifier: 'owner2@gmail.com', password: '123456' });
   ownerToken2 = ownerRes2.body.token;
+  ownerID2 = ownerRes2.body.user._id;
 
   //user
   const userRes = await request(app)
@@ -81,13 +86,13 @@ beforeAll(async () => {
   const hotelRes = await request(app)
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
-    .send(newHotel());
+    .send(newHotel(ownerID));
   hotelId = hotelRes.body.data._id;
 
   const hotelRes2 = await request(app)
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
-    .send(newHotel());
+    .send(newHotel(ownerID2));
   hotelId2 = hotelRes2.body.data._id;
 
   const roomRes = await request(app)
@@ -98,7 +103,7 @@ beforeAll(async () => {
 
   const roomRes2 = await request(app)
     .post(`/api/v1/hotels/${hotelId2}/rooms`)
-    .set('Authorization', `Bearer ${ownerToken}`)
+    .set('Authorization', `Bearer ${ownerToken2}`)
     .send(newRoom(hotelId2));
   roomId2 = roomRes2.body.data._id;
 });
@@ -319,16 +324,32 @@ describe('Room API (Integration)', () => {
   });
 
   test('UPDATE room not found', async () => {
+    const fakeRoomId = new mongoose.Types.ObjectId();
     const res = await request(app)
-      .put(`/api/v1/hotels/${hotelId}/rooms/123456789012345678901234`)
+      .put(`/api/v1/hotels/${hotelId}/rooms/${fakeRoomId}`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send({ price: 2000 });
 
     expect([400, 404]).toContain(res.statusCode);
-
-  
   });
 
+  test('UPDATE room not belong to hotel', async () => {
+    const res = await request(app)
+      .put(`/api/v1/hotels/${hotelId}/rooms/${roomId2}`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ price: 2000 });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('UPDATE room not owned hotel room (hotelOwner)', async () => {
+    const res = await request(app)
+      .put(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .set('Authorization', `Bearer ${ownerToken2}`)
+      .send({ price: 2000 });
+
+    expect(res.statusCode).toBe(403);
+  });
 
   // ===================
   // ✅ DELETE
@@ -342,9 +363,45 @@ describe('Room API (Integration)', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  test('DELETE room (owner)', async () => {
+  test('DELETE room not exist', async () => {
+    const fakeRoomId = new mongoose.Types.ObjectId();
     const res = await request(app)
-      .delete(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .delete(`/api/v1/hotels/${hotelId}/rooms/${fakeRoomId}`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  test('DELETE room but hotel not found', async () => {
+    const fakeHotelId = new mongoose.Types.ObjectId();
+    const res = await request(app)
+      .delete(`/api/v1/hotels/${fakeHotelId}/rooms/${roomId}`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  test('DELETE room not belong to hotel', async () => {
+    const res = await request(app)
+      .delete(`/api/v1/hotels/${hotelId2}/rooms/${roomId2}`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+    
+    expect(res.statusCode).toBe(403);
+  });
+
+  test('DELETE room (owner)', async () => {
+
+    //create new room to delete
+    const createRes = await request(app)
+      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send(newRoom(hotelId));
+    const newRoomId = createRes.body.data._id;
+
+    expect(createRes.statusCode).toBe(201);
+
+    const res = await request(app)
+      .delete(`/api/v1/hotels/${hotelId}/rooms/${newRoomId}`)
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(res.statusCode).toBe(200);
