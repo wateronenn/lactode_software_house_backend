@@ -62,11 +62,11 @@ exports.getManyHotels = async (req, res, next) => {
 
 
 // @desc    view single hotel
-// @route   GET /api/v1/hotels/:id
+// @route   GET /api/v1/hotels/:hotelID
 // @access  Public
 exports.getSingleHotel = async (req, res, next) => {
     try {
-        const hotel = await Hotel.findById(req.params.id)
+        const hotel = await Hotel.findById(req.params.hotelID)
 
         if (!hotel) {
             return res.status(404).json({
@@ -84,7 +84,7 @@ exports.getSingleHotel = async (req, res, next) => {
         if (err.name === 'CastError') {
             return res.status(400).json({
                 success: false,
-                msg: `Invalid hotel ID format: ${req.params.id}`
+                msg: `Invalid hotel ID format: ${req.params.hotelID}`
             })
         }
 
@@ -121,13 +121,13 @@ exports.createHotel = async (req,res,next) => {
 
 
 // @desc    update hotel
-// @route   PUT api/v1/hotels/:id
+// @route   PUT api/v1/hotels/:hotelID
 // @access  admin , hotel owner
 
 
 exports.updateHotel = async (req, res, next) => {
     try {
-        const hotel = await Hotel.findById(req.params.id);
+        const hotel = await Hotel.findById(req.params.hotelID);
 
         if (!hotel) {
             return res.status(404).json({
@@ -148,7 +148,7 @@ exports.updateHotel = async (req, res, next) => {
         }
 
         const updatedHotel = await Hotel.findByIdAndUpdate(
-            req.params.id,
+            req.params.hotelID,
             req.body,
             {
                 new: true,
@@ -173,7 +173,7 @@ exports.updateHotel = async (req, res, next) => {
 
 
 // @desc    delete hotel
-// @route   DELETE api/v1/hotels/:id
+// @route   DELETE api/v1/hotels/:hotelID
 // @access  admin
 exports.deleteHotel = async(req,res,next) => {
     if(req.user.role !== 'admin'){
@@ -183,7 +183,7 @@ exports.deleteHotel = async(req,res,next) => {
         })
     }
     try{
-        const hotel = await Hotel.findByIdAndDelete(req.params.id);
+        const hotel = await Hotel.findByIdAndDelete(req.params.hotelID);
 
         if(!hotel){
             return res.status(400).json({success:false});
@@ -196,5 +196,3 @@ exports.deleteHotel = async(req,res,next) => {
         })
     }
 }
-
-
