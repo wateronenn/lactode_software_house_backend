@@ -110,6 +110,23 @@ beforeAll(async () => {
 
 
 afterAll(async () => {
+
+  request(app)
+    .delete(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  request(app)
+    .delete(`/api/v1/hotels/${hotelId2}/rooms/${roomId2}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  request(app)
+    .delete(`/api/v1/hotels/${hotelId}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  request(app)
+    .delete(`/api/v1/hotels/${hotelId2}`)
+    .set('Authorization', `Bearer ${adminToken}`);  
+
   await mongoose.connection.close();
 });
 
