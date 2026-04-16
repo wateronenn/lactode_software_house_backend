@@ -203,6 +203,35 @@ test('Admin sees all bookings', async () => {
 
 });
 
+test('User get single booking', async () => {
+  const res = await request(app)
+    .get(`/api/v1/bookings/${bookingId}`)
+    .set('Authorization', `Bearer ${userToken}`);
+
+  expect(res.statusCode).toBe(200);
+  expect(res.body.data._id).toBe(bookingId);
+});
+
+  // ===================
+  // ❌ INVALID GET(single)
+  // ===================
+
+  test('User get single booking not exist', async () => {
+    const res = await request(app)
+      .get(`/api/v1/bookings/${new mongoose.Types.ObjectId()}`)
+      .set('Authorization', `Bearer ${userToken}`);
+    
+    expect(res.statusCode).toBe(404);
+  });
+
+  test('User get single booking invalid ID', async () => {
+    const res = await request(app)
+      .get('/api/v1/bookings/123') // ID ที่ไม่ใช่ ObjectId
+      .set('Authorization', `Bearer ${userToken}`); 
+    expect(res.statusCode).toBe(400);
+  });
+
+
   // ===================
   // ❌ INVALID CREATE
   // ===================
@@ -213,7 +242,81 @@ test('Admin sees all bookings', async () => {
       .set('Authorization', `Bearer ${userToken}`)
       .send({
         ...newBooking(userId, hotelId, roomId),
-        hotelID: '123'
+        hotelId: '123'
+      });
+
+    expect(res.statusCode).toBe(500);
+  });
+
+  test('CREATE booking no checkin date', async () => {
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        ...newBooking(userId, hotelId, roomId),
+        checkInDate: undefined
+      });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('CREATE booking no checkout date', async () => {
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        ...newBooking(userId, hotelId, roomId),
+        checkOutDate: undefined
+      });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('CREATE booking invalid date format', async () => {
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        ...newBooking(userId, hotelId, roomId),
+        checkInDate: 'invalid-date',
+        checkOutDate: 'invalid-date'
+      });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('CREATE booking exceed 3 days', async () => {
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        ...newBooking(userId, hotelId, roomId),
+        checkInDate: '2026-05-01',
+        checkOutDate: '2026-05-10'
+      });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('CREATE booking invalid room ID', async () => {
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        ...newBooking(userId, hotelId, roomId),
+        roomID: '123'
+      });
+
+    expect(res.statusCode).toBe(500);
+  });
+
+  test('CREATE booking roomID not exist', async () => {
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        ...newBooking(userId, hotelId, roomId),
+        roomID: new mongoose.Types.ObjectId()
       });
 
     expect(res.statusCode).toBe(400);
@@ -243,7 +346,102 @@ test('Admin sees all bookings', async () => {
   });
 
   // ===================
-  // ❌ AUTHORIZATION
+  // UPDATE BOOKING
+  // ===================
+
+  test('User update (valid)', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        checkInDate: '2026-06-01',
+        checkOutDate: '2026-06-02'
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.checkInDate).toBe('2026-06-01T00:00:00.000Z');
+    expect(res.body.data.checkOutDate).toBe('2026-06-02T00:00:00.000Z');
+  });
+
+  test('User update invalid date', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`) 
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        checkInDate: 'invalid-date',
+        checkOutDate: 'invalid-date'
+      });
+    
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('User update checkout < checkin', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        checkInDate: '2026-06-05',
+        checkOutDate: '2026-06-01'
+      });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('User update booking exceed 3 days', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        checkInDate: '2026-06-01',
+        checkOutDate: '2026-06-10'
+      });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('User update data not date', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        userID:userId2,
+      });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('User update not belong booking', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${userToken2}`)
+      .send({ checkInDate: '2026-06-01', checkOutDate: '2026-06-02' });
+    expect(res.statusCode).toBe(403);
+  });
+
+  test('Owner update booking in owned hotel', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ checkInDate: '2026-06-01', checkOutDate: '2026-06-02' });
+    expect(res.statusCode).toBe(200);
+  });
+
+  test('Owner update booking not owned hotel', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${owner2Token}`)
+      .send({ checkInDate: '2026-06-01', checkOutDate: '2026-06-02' });
+    expect(res.statusCode).toBe(403);
+  });
+
+  test('Admin update booking', async () => {
+    const res = await request(app)
+      .put(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ checkInDate: '2026-06-01', checkOutDate: '2026-06-02' });
+    expect(res.statusCode).toBe(200);
+  });
+
+
+  // ===================
+  // ❌ DELETE
   // ===================
 
   test('User delete booking that not belong', async () => {
@@ -294,21 +492,28 @@ test('Admin sees all bookings', async () => {
       expect(res.statusCode).toBe(200);
   });
 
-    test('Owner delete booking in owned hotel', async () => {
-    // สร้าง booking ใหม่
-        
-    const createRes = await request(app)
-      .post('/api/v1/bookings')
-      .set('Authorization', `Bearer ${ownerToken}`)
-      .send(newBooking(userId, hotelId, roomId));
-    const newBookingId = createRes.body.data._id;   
+  test('Owner delete booking in owned hotel', async () => {
+  // สร้าง booking ใหม่
+      
+  const createRes = await request(app)
+    .post('/api/v1/bookings')
+    .set('Authorization', `Bearer ${ownerToken}`)
+    .send(newBooking(userId, hotelId, roomId));
+  const newBookingId = createRes.body.data._id;   
 
-    // ลบ booking
+  // ลบ booking
+  const res = await request(app)
+    .delete(`/api/v1/bookings/${newBookingId}`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+  
+      expect(res.statusCode).toBe(200);
+
+  });
+
+  test('Admin delete booking not exist', async () => {
     const res = await request(app)
-      .delete(`/api/v1/bookings/${newBookingId}`)
-        .set('Authorization', `Bearer ${ownerToken}`);
-    
-        expect(res.statusCode).toBe(200);
-
-    });
+      .delete(`/api/v1/bookings/${new mongoose.Types.ObjectId()}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.statusCode).toBe(404);
+  });
 });

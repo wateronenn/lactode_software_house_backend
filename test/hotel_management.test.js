@@ -3,7 +3,6 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
 jest.setTimeout(20000); // เพิ่มเวลาเป็น 20 วิ
-// const test = require('node:test');
 
 const fakeHotelId = new mongoose.Types.ObjectId();
 
@@ -129,6 +128,15 @@ describe('Hotel API (Integration Advanced)', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  test('Create not admin)', async () => {
+    const res = await request(app)
+      .post('/api/v1/hotels')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send(newRandomHotel());
+
+    expect(res.statusCode).toBe(403);
+  });
+
   // ✅ GET ALL
   test('GET all hotels(user)', async () => {
     const res = await request(app)
@@ -171,6 +179,14 @@ describe('Hotel API (Integration Advanced)', () => {
 
   });
 
+  test('GET single hotel (invalid ID)', async () => {
+    const res = await request(app)
+      .get('/api/v1/hotels/123') // ID ที่ไม่ใช่ ObjectId
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.statusCode).toBe(400);
+  });
+
   // ✅ UPDATE (admin)
   test('UPDATE hotel (admin)', async () => {
     const res = await request(app)
@@ -202,6 +218,15 @@ describe('Hotel API (Integration Advanced)', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  test('UPDATE hotel not exist', async () => {
+    const res = await request(app)
+      .put(`/api/v1/hotels/${fakeHotelId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: "Updated Hotel" });
+
+    expect(res.statusCode).toBe(404);
+  });
+
   // ❌ DELETE (user → 403)
   test('DELETE hotel (user should fail)', async () => {
     const res = await request(app)
@@ -218,6 +243,14 @@ describe('Hotel API (Integration Advanced)', () => {
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(res.statusCode).toBe(403);
+  });
+
+  test('DELETE hotel not exist', async () => {
+    const res = await request(app)
+      .delete(`/api/v1/hotels/${fakeHotelId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.statusCode).toBe(400);
   });
 
   // ✅ DELETE (admin)

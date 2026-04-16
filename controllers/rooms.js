@@ -142,7 +142,7 @@ exports.deleteRoom = async (req, res) => {
         }
 
         await Hotel.findByIdAndUpdate(room.hotelID, {
-            $pull: { rooms: room._id }
+              $pull: { rooms: room._id }
         });
 
         await room.deleteOne();
