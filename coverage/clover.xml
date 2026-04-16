@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1776240405497" clover="3.2.0">
-  <project timestamp="1776240405497" name="All files">
-    <metrics statements="382" coveredstatements="306" conditionals="155" coveredconditionals="118" methods="40" coveredmethods="32" elements="577" coveredelements="456" complexity="0" loc="382" ncloc="382" packages="5" files="14" classes="14"/>
+<coverage generated="1776242698624" clover="3.2.0">
+  <project timestamp="1776242698624" name="All files">
+    <metrics statements="382" coveredstatements="310" conditionals="155" coveredconditionals="122" methods="40" coveredmethods="32" elements="577" coveredelements="464" complexity="0" loc="382" ncloc="382" packages="5" files="14" classes="14"/>
     <package name="be-final-se">
       <metrics statements="23" coveredstatements="23" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
       <file name="app.js" path="C:\Users\Lin\Desktop\coding\WebDev\be-final-se\app.js">
@@ -32,7 +32,7 @@
       </file>
     </package>
     <package name="be-final-se.controllers">
-      <metrics statements="273" coveredstatements="205" conditionals="138" coveredconditionals="108" methods="28" coveredmethods="21"/>
+      <metrics statements="273" coveredstatements="209" conditionals="138" coveredconditionals="112" methods="28" coveredmethods="21"/>
       <file name="auth.js" path="C:\Users\Lin\Desktop\coding\WebDev\be-final-se\controllers\auth.js">
         <metrics statements="57" coveredstatements="20" conditionals="20" coveredconditionals="7" methods="7" coveredmethods="2"/>
         <line num="1" count="3" type="stmt"/>
@@ -102,7 +102,7 @@
         <line num="11" count="3" type="stmt"/>
         <line num="15" count="3" type="cond" truecount="2" falsecount="0"/>
         <line num="16" count="1" type="stmt"/>
-        <line num="17" count="115" type="stmt"/>
+        <line num="17" count="124" type="stmt"/>
         <line num="19" count="1" type="stmt"/>
         <line num="24" count="2" type="cond" truecount="2" falsecount="0"/>
         <line num="25" count="1" type="stmt"/>
@@ -254,7 +254,7 @@
         <line num="193" count="0" type="stmt"/>
       </file>
       <file name="rooms.js" path="C:\Users\Lin\Desktop\coding\WebDev\be-final-se\controllers\rooms.js">
-        <metrics statements="62" coveredstatements="50" conditionals="30" coveredconditionals="21" methods="7" coveredmethods="6"/>
+        <metrics statements="62" coveredstatements="54" conditionals="30" coveredconditionals="25" methods="7" coveredmethods="6"/>
         <line num="1" count="3" type="stmt"/>
         <line num="2" count="3" type="stmt"/>
         <line num="8" count="3" type="stmt"/>
@@ -272,31 +272,31 @@
         <line num="41" count="1" type="stmt"/>
         <line num="43" count="0" type="stmt"/>
         <line num="50" count="3" type="stmt"/>
-        <line num="51" count="10" type="stmt"/>
-        <line num="52" count="10" type="stmt"/>
-        <line num="53" count="10" type="cond" truecount="2" falsecount="0"/>
+        <line num="51" count="11" type="stmt"/>
+        <line num="52" count="11" type="stmt"/>
+        <line num="53" count="11" type="cond" truecount="2" falsecount="0"/>
         <line num="54" count="2" type="stmt"/>
-        <line num="57" count="8" type="cond" truecount="4" falsecount="0"/>
+        <line num="57" count="9" type="cond" truecount="4" falsecount="0"/>
         <line num="58" count="1" type="stmt"/>
-        <line num="61" count="7" type="stmt"/>
-        <line num="62" count="7" type="stmt"/>
-        <line num="64" count="4" type="stmt"/>
-        <line num="68" count="4" type="stmt"/>
+        <line num="61" count="8" type="stmt"/>
+        <line num="62" count="8" type="stmt"/>
+        <line num="64" count="5" type="stmt"/>
+        <line num="68" count="5" type="stmt"/>
         <line num="70" count="3" type="cond" truecount="1" falsecount="1"/>
         <line num="71" count="3" type="stmt"/>
         <line num="72" count="3" type="stmt"/>
         <line num="74" count="0" type="stmt"/>
         <line num="82" count="3" type="stmt"/>
-        <line num="83" count="2" type="stmt"/>
-        <line num="84" count="2" type="stmt"/>
-        <line num="86" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="83" count="4" type="stmt"/>
+        <line num="84" count="4" type="stmt"/>
+        <line num="86" count="4" type="cond" truecount="2" falsecount="0"/>
         <line num="87" count="1" type="stmt"/>
-        <line num="91" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="92" count="0" type="stmt"/>
-        <line num="96" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="97" count="1" type="stmt"/>
-        <line num="98" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="99" count="0" type="stmt"/>
+        <line num="91" count="3" type="cond" truecount="2" falsecount="0"/>
+        <line num="92" count="1" type="stmt"/>
+        <line num="96" count="2" type="cond" truecount="1" falsecount="1"/>
+        <line num="97" count="2" type="stmt"/>
+        <line num="98" count="2" type="cond" truecount="2" falsecount="0"/>
+        <line num="99" count="1" type="stmt"/>
         <line num="104" count="1" type="stmt"/>
         <line num="106" count="1" type="stmt"/>
         <line num="115" count="1" type="stmt"/>
@@ -305,17 +305,17 @@
         <line num="119" count="0" type="stmt"/>
         <line num="121" count="0" type="stmt"/>
         <line num="130" count="3" type="stmt"/>
-        <line num="131" count="1" type="stmt"/>
-        <line num="132" count="1" type="stmt"/>
-        <line num="133" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="134" count="0" type="stmt"/>
-        <line num="137" count="1" type="cond" truecount="1" falsecount="1"/>
-        <line num="138" count="1" type="stmt"/>
-        <line num="139" count="1" type="cond" truecount="3" falsecount="1"/>
-        <line num="140" count="0" type="stmt"/>
-        <line num="144" count="1" type="stmt"/>
-        <line num="148" count="1" type="stmt"/>
-        <line num="149" count="1" type="stmt"/>
+        <line num="131" count="4" type="stmt"/>
+        <line num="132" count="4" type="stmt"/>
+        <line num="133" count="4" type="cond" truecount="2" falsecount="0"/>
+        <line num="134" count="1" type="stmt"/>
+        <line num="137" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="138" count="3" type="stmt"/>
+        <line num="139" count="3" type="cond" truecount="4" falsecount="0"/>
+        <line num="140" count="1" type="stmt"/>
+        <line num="144" count="2" type="stmt"/>
+        <line num="148" count="2" type="stmt"/>
+        <line num="149" count="2" type="stmt"/>
         <line num="151" count="0" type="stmt"/>
       </file>
     </package>
@@ -326,22 +326,22 @@
         <line num="1" count="3" type="stmt"/>
         <line num="2" count="3" type="stmt"/>
         <line num="4" count="3" type="stmt"/>
-        <line num="7" count="68" type="cond" truecount="3" falsecount="1"/>
-        <line num="8" count="68" type="stmt"/>
-        <line num="10" count="68" type="cond" truecount="2" falsecount="3"/>
+        <line num="7" count="74" type="cond" truecount="3" falsecount="1"/>
+        <line num="8" count="74" type="stmt"/>
+        <line num="10" count="74" type="cond" truecount="2" falsecount="3"/>
         <line num="11" count="0" type="stmt"/>
-        <line num="13" count="68" type="cond" truecount="1" falsecount="1"/>
+        <line num="13" count="74" type="cond" truecount="1" falsecount="1"/>
         <line num="14" count="0" type="stmt"/>
-        <line num="17" count="68" type="stmt"/>
-        <line num="18" count="68" type="stmt"/>
-        <line num="20" count="68" type="stmt"/>
-        <line num="22" count="68" type="stmt"/>
+        <line num="17" count="74" type="stmt"/>
+        <line num="18" count="74" type="stmt"/>
+        <line num="20" count="74" type="stmt"/>
+        <line num="22" count="74" type="stmt"/>
         <line num="26" count="0" type="stmt"/>
         <line num="30" count="3" type="stmt"/>
         <line num="31" count="27" type="stmt"/>
-        <line num="32" count="61" type="cond" truecount="2" falsecount="0"/>
+        <line num="32" count="67" type="cond" truecount="2" falsecount="0"/>
         <line num="33" count="11" type="stmt"/>
-        <line num="36" count="50" type="stmt"/>
+        <line num="36" count="56" type="stmt"/>
       </file>
     </package>
     <package name="be-final-se.models">
@@ -368,9 +368,9 @@
         <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
         <line num="1" count="3" type="stmt"/>
         <line num="3" count="3" type="stmt"/>
-        <line num="13" count="7" type="stmt"/>
-        <line num="14" count="7" type="stmt"/>
-        <line num="68" count="7" type="stmt"/>
+        <line num="13" count="8" type="stmt"/>
+        <line num="14" count="8" type="stmt"/>
+        <line num="68" count="8" type="stmt"/>
         <line num="137" count="3" type="stmt"/>
       </file>
       <file name="User.js" path="C:\Users\Lin\Desktop\coding\WebDev\be-final-se\models\User.js">
