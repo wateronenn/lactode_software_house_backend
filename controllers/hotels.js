@@ -32,24 +32,12 @@ exports.getManyHotels = async (req, res, next) => {
             query = query.sort('-createdAt') // default: newest first
         }
 
-        // Handle PAGINATION
-        const page = parseInt(req.query.page, 10) || 1
-        const limit = parseInt(req.query.limit, 10) || 10
-        const skip = (page - 1) * limit
-        const total = await Hotel.countDocuments(JSON.parse(queryStr))
-        const totalPages = Math.ceil(total / limit)
-
-        query = query.skip(skip).limit(limit)
-
         // Execute query
         const hotels = await query
 
         res.status(200).json({
             success: true,
             count: hotels.length,
-            total,
-            totalPages,
-            currentPage: page,
             data: hotels
         })
     } catch (err) {
