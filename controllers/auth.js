@@ -1,6 +1,32 @@
 const User = require('../models/User');
 
 
+// @desc    get all user
+// @route   GET /api/v1/auth
+// @access  admin
+exports.getAllUsers = async(req,res,next) => {
+    try{
+        if(req.user.role !== "admin"){
+          return res.status(403).json({
+            success:false,
+            msg: "Not authorized to access this route"
+          })
+        }
+        const users = await User.find().select('-password');
+        return res.status(200).json({
+          success : true,
+          total : users.length,
+          data : users
+        })
+    }
+    catch(err){
+      return res.status(500).json({
+        success:false,
+        msg:err.message
+      })
+    }
+}
+
 // @desc    Register user
 // @route   POST /api/v1/auth/register
 // @access  Public
@@ -58,7 +84,7 @@ exports.login = async (req, res, next) => {
       const user = await User.findOne({
         $or: [
           { email: identifier },
-          { username: identifier }
+          { tel: identifier }
         ]
       }).select('+password');
       
