@@ -219,7 +219,7 @@ const {protect , authorize} = require('../middleware/auth');
 /**
  * @swagger
  * /api/v1/auth/resetPassword:
- *   post:
+ *   put:
  *     summary: Reset password
  *     tags: [Auth]
  *     security:
