@@ -1,5 +1,6 @@
 const Booking = require("../models/Booking");
 const Hotel = require("../models/Hotel");
+const Room = require("../models/Room")
 const mongoose = require("mongoose");
 
 // ==============================
@@ -109,15 +110,16 @@ exports.getSingleBooking = async (req, res) => {
 // ==============================
 exports.addBooking = async (req, res) => {
   try {
-    const { hotelID, checkInDate, checkOutDate } = req.body;
+    const { hotelID, checkInDate, checkOutDate,roomID } = req.body;
 
     // ✅ Validate hotelID
-    if (!mongoose.Types.ObjectId.isValid(hotelID)) {
+    if (!mongoose.Types.ObjectId.isValid(hotelID) || !mongoose.Types.ObjectId.isValid(roomID)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid hotelID",
+        message: "Invalid hotelID or roomID format",
       });
-    }
+    } 
+
 
     const hotel = await Hotel.findById(hotelID);
     if (!hotel) {
@@ -126,7 +128,13 @@ exports.addBooking = async (req, res) => {
         message: "Invalid hotelID",
       });
     }
-
+    const room = await Room.findById(roomID);
+    if (!room) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid roomID",
+      });
+    }
     // assign user
     if (req.user.role !== "admin") {
       req.body.user = req.user.id;
@@ -190,12 +198,7 @@ exports.addBooking = async (req, res) => {
 // ==============================
 exports.updateBooking = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // ✅ Validate ID
-
-
-    let booking = await Booking.findById(id).populate("hotelID");
+    let booking = await Booking.findById(req.params.id).populate("hotelID");
 
     if (!booking) {
       return res.status(404).json({
@@ -205,11 +208,10 @@ exports.updateBooking = async (req, res) => {
     }
 
     // ✅ Authorization
-    if (
-      booking.user.toString() !== req.user.id &&
-      req.user.role !== "admin" &&
-      booking.hotelID.ownerID?.toString() !== req.user.id
-    ) {
+    const isBookingOwner = booking.user.toString() === req.user.id;
+    const isAdmin = req.user.role === "admin";
+    const isHotelOwner = booking.hotelID.ownerID?.toString() === req.user.id;
+    if (!isBookingOwner && !isAdmin && !isHotelOwner) {
       return res.status(403).json({
         success: false,
         message: "Not authorized",
@@ -223,6 +225,12 @@ exports.updateBooking = async (req, res) => {
     Object.keys(req.body).forEach((key) => {
       if (allowed.includes(key)) {
         updateData[key] = req.body[key];
+      }
+      else{
+        return res.status(400).json({
+          success: false,
+          message: "Cannot update data exclude date",
+      });
       }
     });
 
@@ -247,7 +255,6 @@ exports.updateBooking = async (req, res) => {
         message: "checkOutDate must be after checkInDate",
       });
     }
-
     const days = (checkOut - checkIn) / (1000 * 60 * 60 * 24);
 
     if (req.user.role !== "admin" && days > 3) {
@@ -257,10 +264,10 @@ exports.updateBooking = async (req, res) => {
       });
     }
 
-    booking = await Booking.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    booking = await Booking.findById(req.params.id)
+    booking.checkInDate = checkIn;
+    booking.checkOutDate = checkOut;
+    await booking.save();
 
     res.status(200).json({
       success: true,

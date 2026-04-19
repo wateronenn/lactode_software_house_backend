@@ -9,9 +9,9 @@ let ownerToken;
 let ownerToken2;
 let userToken;
 
-let hotelId;
+let hotelID;
 let roomId;
-let hotelId2;
+let hotelID2;
 let roomId2;
 
 let owerId;
@@ -34,8 +34,8 @@ const newHotel = (ownerId) => ({
   region: "Central"
 });
 
-const newRoom = (hotelId) => ({
-  hotelID: hotelId,
+const newRoom = (hotelID) => ({
+  hotelID: hotelID,
   roomType: "single",
   bedType: "queen",
   bed: 1,
@@ -87,29 +87,46 @@ beforeAll(async () => {
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
     .send(newHotel(ownerID));
-  hotelId = hotelRes.body.data._id;
+  hotelID = hotelRes.body.data._id;
 
   const hotelRes2 = await request(app)
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
     .send(newHotel(ownerID2));
-  hotelId2 = hotelRes2.body.data._id;
+  hotelID2 = hotelRes2.body.data._id;
 
   const roomRes = await request(app)
-    .post(`/api/v1/hotels/${hotelId}/rooms`)
+    .post(`/api/v1/hotels/${hotelID}/rooms`)
     .set('Authorization', `Bearer ${ownerToken}`)
-    .send(newRoom(hotelId));
+    .send(newRoom(hotelID));
   roomId = roomRes.body.data._id;
 
   const roomRes2 = await request(app)
-    .post(`/api/v1/hotels/${hotelId2}/rooms`)
+    .post(`/api/v1/hotels/${hotelID2}/rooms`)
     .set('Authorization', `Bearer ${ownerToken2}`)
-    .send(newRoom(hotelId2));
+    .send(newRoom(hotelID2));
   roomId2 = roomRes2.body.data._id;
 });
 
 
 afterAll(async () => {
+
+  request(app)
+    .delete(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  request(app)
+    .delete(`/api/v1/hotels/${hotelID2}/rooms/${roomId2}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  request(app)
+    .delete(`/api/v1/hotels/${hotelID}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  request(app)
+    .delete(`/api/v1/hotels/${hotelID2}`)
+    .set('Authorization', `Bearer ${adminToken}`);  
+
   await mongoose.connection.close();
 });
 
@@ -125,7 +142,7 @@ describe('Room API (Integration)', () => {
 
   test('GET all rooms (admin)', async () => {
     const res = await request(app)
-      .get(`/api/v1/hotels/${hotelId}/rooms`)
+      .get(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.statusCode).toBe(200);
@@ -134,7 +151,7 @@ describe('Room API (Integration)', () => {
 
   test('GET all rooms (user)', async () => {
     const res = await request(app)
-      .get(`/api/v1/hotels/${hotelId}/rooms`)
+      .get(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${userToken}`);
 
     expect(res.statusCode).toBe(200);
@@ -142,7 +159,7 @@ describe('Room API (Integration)', () => {
 
   test('GET all rooms (hotelOwner)', async () => {
     const res = await request(app)
-      .get(`/api/v1/hotels/${hotelId}/rooms`)
+      .get(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(res.statusCode).toBe(200);
@@ -155,7 +172,7 @@ describe('Room API (Integration)', () => {
 
   test('GET single room', async () => {
     const res = await request(app)
-      .get(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .get(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
       .set('Authorization', `Bearer ${userToken}`);
 
     expect(res.statusCode).toBe(200);
@@ -164,7 +181,7 @@ describe('Room API (Integration)', () => {
 
   test('GET single room not belong to hotel', async () => {
     const res = await request(app)
-      .get(`/api/v1/hotels/${hotelId}/rooms/${roomId2}`) // ID ที่ไม่ใช่ของโรงแรมนี้
+      .get(`/api/v1/hotels/${hotelID}/rooms/${roomId2}`) // ID ที่ไม่ใช่ของโรงแรมนี้
       .set('Authorization', `Bearer ${userToken}`);
 
     expect(res.statusCode).toBe(400);
@@ -172,7 +189,7 @@ describe('Room API (Integration)', () => {
 
   test('GET single room not exist', async () => {
     const res = await request(app)
-      .get(`/api/v1/hotels/${hotelId}/rooms/123456789012345678901234`) // ID ที่ไม่มีใน DB
+      .get(`/api/v1/hotels/${hotelID}/rooms/123456789012345678901234`) // ID ที่ไม่มีใน DB
       .set('Authorization', `Bearer ${userToken}`);
 
     expect(res.statusCode).toBe(404);
@@ -184,9 +201,9 @@ describe('Room API (Integration)', () => {
 
   test('CREATE room (owner)', async () => {
     const res = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${ownerToken}`)
-      .send(newRoom(hotelId));
+      .send(newRoom(hotelID));
 
     expect(res.statusCode).toBe(201);
     roomId = res.body.data._id;
@@ -205,9 +222,9 @@ describe('Room API (Integration)', () => {
 
   test('create room but not owner of hotel', async () => {
     const res = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${ownerToken2}`) // token ของเจ้าของโรงแรมอื่น
-      .send(newRoom(hotelId));
+      .send(newRoom(hotelID));
 
     expect(res.statusCode).toBe(403);
   });
@@ -220,18 +237,18 @@ describe('Room API (Integration)', () => {
 
   test('CREATE room (user fail)', async () => {
     const res = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${userToken}`)
-      .send(newRoom(hotelId));
+      .send(newRoom(hotelID));
 
     expect(res.statusCode).toBe(403);
   });
 
   test('CREATE room (admin fail)', async () => {
     const res = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send(newRoom(hotelId));
+      .send(newRoom(hotelID));
 
     expect(res.statusCode).toBe(403);
   });
@@ -241,11 +258,11 @@ describe('Room API (Integration)', () => {
   // ===================
 
   test('CREATE room missing required field', async () => {
-    const badRoom = { ...newRoom(hotelId) };
+    const badRoom = { ...newRoom(hotelID) };
     delete badRoom.roomType;
 
     const res = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(badRoom);
 
@@ -254,12 +271,12 @@ describe('Room API (Integration)', () => {
 
   test('CREATE room invalid enum', async () => {
     const badRoom = {
-      ...newRoom(hotelId),
+      ...newRoom(hotelID),
       roomType: "invalidType"
     };
 
     const res = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(badRoom);
 
@@ -267,7 +284,7 @@ describe('Room API (Integration)', () => {
   });
 
   test('CREATE room invalid hotelID', async () => {
-    const badRoom = newRoom(hotelId);
+    const badRoom = newRoom(hotelID);
 
     const res = await request(app)
       .post(`/api/v1/hotels/123456789012345678901234/rooms`)
@@ -279,12 +296,12 @@ describe('Room API (Integration)', () => {
 
   test('CREATE room negative price', async () => {
     const badRoom = {
-      ...newRoom(hotelId),
+      ...newRoom(hotelID),
       price: -100
     };
 
     const res = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(badRoom);
 
@@ -297,7 +314,7 @@ describe('Room API (Integration)', () => {
 
   test('UPDATE room (owner)', async () => {
     const res = await request(app)
-      .put(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .put(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send({ price: 2000 });
 
@@ -307,7 +324,7 @@ describe('Room API (Integration)', () => {
 
   test('UPDATE room (user fail)', async () => {
     const res = await request(app)
-      .put(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .put(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
       .set('Authorization', `Bearer ${userToken}`)
       .send({ price: 999 });
 
@@ -316,7 +333,7 @@ describe('Room API (Integration)', () => {
 
   test('UPDATE room (admin fail)', async () => {
     const res = await request(app)
-      .put(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .put(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ price: 999 });
 
@@ -326,7 +343,7 @@ describe('Room API (Integration)', () => {
   test('UPDATE room not found', async () => {
     const fakeRoomId = new mongoose.Types.ObjectId();
     const res = await request(app)
-      .put(`/api/v1/hotels/${hotelId}/rooms/${fakeRoomId}`)
+      .put(`/api/v1/hotels/${hotelID}/rooms/${fakeRoomId}`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send({ price: 2000 });
 
@@ -335,7 +352,7 @@ describe('Room API (Integration)', () => {
 
   test('UPDATE room not belong to hotel', async () => {
     const res = await request(app)
-      .put(`/api/v1/hotels/${hotelId}/rooms/${roomId2}`)
+      .put(`/api/v1/hotels/${hotelID}/rooms/${roomId2}`)
       .set('Authorization', `Bearer ${ownerToken}`)
       .send({ price: 2000 });
 
@@ -344,7 +361,7 @@ describe('Room API (Integration)', () => {
 
   test('UPDATE room not owned hotel room (hotelOwner)', async () => {
     const res = await request(app)
-      .put(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .put(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
       .set('Authorization', `Bearer ${ownerToken2}`)
       .send({ price: 2000 });
 
@@ -357,7 +374,7 @@ describe('Room API (Integration)', () => {
 
  test('DELETE room (user fail)', async () => {
     const res = await request(app)
-      .delete(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+      .delete(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
       .set('Authorization', `Bearer ${userToken}`);
 
     expect(res.statusCode).toBe(403);
@@ -366,16 +383,16 @@ describe('Room API (Integration)', () => {
   test('DELETE room not exist', async () => {
     const fakeRoomId = new mongoose.Types.ObjectId();
     const res = await request(app)
-      .delete(`/api/v1/hotels/${hotelId}/rooms/${fakeRoomId}`)
+      .delete(`/api/v1/hotels/${hotelID}/rooms/${fakeRoomId}`)
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(res.statusCode).toBe(404);
   });
 
   test('DELETE room but hotel not found', async () => {
-    const fakeHotelId = new mongoose.Types.ObjectId();
+    const fakehotelID = new mongoose.Types.ObjectId();
     const res = await request(app)
-      .delete(`/api/v1/hotels/${fakeHotelId}/rooms/${roomId}`)
+      .delete(`/api/v1/hotels/${fakehotelID}/rooms/${roomId}`)
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(res.statusCode).toBe(404);
@@ -383,7 +400,7 @@ describe('Room API (Integration)', () => {
 
   test('DELETE room not belong to hotel', async () => {
     const res = await request(app)
-      .delete(`/api/v1/hotels/${hotelId2}/rooms/${roomId2}`)
+      .delete(`/api/v1/hotels/${hotelID2}/rooms/${roomId2}`)
       .set('Authorization', `Bearer ${ownerToken}`);
     
     expect(res.statusCode).toBe(403);
@@ -393,15 +410,15 @@ describe('Room API (Integration)', () => {
 
     //create new room to delete
     const createRes = await request(app)
-      .post(`/api/v1/hotels/${hotelId}/rooms`)
+      .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${ownerToken}`)
-      .send(newRoom(hotelId));
+      .send(newRoom(hotelID));
     const newRoomId = createRes.body.data._id;
 
     expect(createRes.statusCode).toBe(201);
 
     const res = await request(app)
-      .delete(`/api/v1/hotels/${hotelId}/rooms/${newRoomId}`)
+      .delete(`/api/v1/hotels/${hotelID}/rooms/${newRoomId}`)
       .set('Authorization', `Bearer ${ownerToken}`);
 
     expect(res.statusCode).toBe(200);
