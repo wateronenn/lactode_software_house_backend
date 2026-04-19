@@ -51,7 +51,7 @@ exports.login = async (req, res, next) => {
       const user = await User.findOne({
         $or: [
           { email: identifier },
-          { username: identifier }
+          { tel: identifier }
         ]
       }).select('+password');
       
