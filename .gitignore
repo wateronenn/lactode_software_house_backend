@@ -1,4 +1,7 @@
 /node_modules
 /.vscode
 config/config.env
-/coverage
+coverage/
+*.lcov
+*.html
+coverage-final.json

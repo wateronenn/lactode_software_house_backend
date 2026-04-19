@@ -136,6 +136,9 @@ exports.addBooking = async (req, res) => {
       });
     }
 
+      const inDate = new Date(checkInDate);
+    const outDate = new Date(checkOutDate);
+
     const bookedCount = await Booking.countDocuments({
       roomID: roomID,
       checkInDate: { $lt: outDate },
@@ -162,8 +165,7 @@ exports.addBooking = async (req, res) => {
       });
     }
 
-    const inDate = new Date(checkInDate);
-    const outDate = new Date(checkOutDate);
+  
 
     if (isNaN(inDate) || isNaN(outDate)) {
       return res.status(400).json({
