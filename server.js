@@ -5,6 +5,9 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const app = require("./app");
 
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express')
+
 // Load env vars
 dotenv.config({ path: "./config/config.env" });
 
@@ -27,3 +30,26 @@ process.on("unhandledRejection", (err) => {
   console.log(`Error: ${err.message}`);
   server.close(() => process.exit(1));
 });
+
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Hotel Booking API',
+            version: '1.0.0'
+        },
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT'
+                }
+            }
+        }
+    },
+    apis: ['./routes/*.js']
+};
+
+const swaggerDoc = swaggerJsDoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));

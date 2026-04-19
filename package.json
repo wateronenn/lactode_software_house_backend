@@ -40,6 +40,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
     "ratelimit": "^0.0.4",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "xss": "^1.0.15"
   }
 }

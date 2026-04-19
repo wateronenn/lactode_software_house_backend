@@ -4,6 +4,264 @@ const router = express.Router();
 const {protect,authorize} = require('../middleware/auth');
 const roomRouter = require('./rooms')
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Hotel:
+ *       type: object
+ *       required:
+ *         - name
+ *         - location
+ *         - ownerID
+ *         - tel
+ *         - email
+ *         - district
+ *         - province
+ *         - postalcode
+ *         - region
+ *       properties:
+ *         _id:
+ *           type: string
+ *         name:
+ *           type: string
+ *           minLength: 3
+ *           maxLength: 100
+ *         description:
+ *           type: string
+ *           maxLength: 2000
+ *           default: ''
+ *         location:
+ *           type: string
+ *         ownerID:
+ *           type: string
+ *           description: User ID (ref User, role must be hotelOwner)
+ *         tel:
+ *           type: string
+ *         email:
+ *           type: string
+ *           format: email
+ *         district:
+ *           type: string
+ *         province:
+ *           type: string
+ *         postalcode:
+ *           type: string
+ *         region:
+ *           type: string
+ *         pictures:
+ *           type: array
+ *           items:
+ *             type: string
+ *           maxItems: 20
+ *           default: []
+ *         rooms:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Array of Room IDs (ref Room)
+ *           default: []
+ *         roomTypes:
+ *           type: array
+ *           items:
+ *             type: string
+ *           maxItems: 10
+ *           default: []
+ *         facilities:
+ *           type: array
+ *           items:
+ *             type: string
+ *             enum: [wifi, parking, pool, gym, restaurant, bar, spa, laundry, room_service, air_conditioning, heating, concierge, conference_room, elevator, garden, library, safe, tv, minibar, kitchen]
+ *           default: []
+ *         status:
+ *           type: string
+ *           enum: [available, occupied, maintenance, reserved]
+ *           default: available
+ *         favoriteBy:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         bookedTimes:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /api/v1/hotels:
+ *   get:
+ *     summary: Get all hotels
+ *     tags: [Hotels]
+ *     parameters:
+ *       - in: query
+ *         name: select
+ *         schema:
+ *           type: string
+ *         description: Fields to select (comma-separated)
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *         description: Sort by field (comma-separated)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 count:
+ *                   type: integer
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Hotel'
+ *       500:
+ *         description: Internal server error
+ *   post:
+ *     summary: Create hotel
+ *     tags: [Hotels]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Hotel'
+ *     responses:
+ *       201:
+ *         description: Hotel created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Hotel'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal server error
+ */
+
+/**
+ * @swagger
+ * /api/v1/hotels/{hotelID}:
+ *   get:
+ *     summary: Get single hotel
+ *     tags: [Hotels]
+ *     parameters:
+ *       - in: path
+ *         name: hotelID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Hotel'
+ *       400:
+ *         description: Invalid hotel ID format
+ *       404:
+ *         description: Hotel not found
+ *       500:
+ *         description: Internal server error
+ *   put:
+ *     summary: Update hotel
+ *     tags: [Hotels]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hotelID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Hotel'
+ *     responses:
+ *       200:
+ *         description: Updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Hotel'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Hotel not found
+ *       500:
+ *         description: Internal server error
+ *   delete:
+ *     summary: Delete hotel
+ *     tags: [Hotels]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hotelID
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Deleted
+ *       400:
+ *         description: Hotel not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal server error
+ */
+
 router.use('/:hotelID/rooms',roomRouter) // override path for room under the management of hotel
 router.route('/')
     .get(getManyHotels)
