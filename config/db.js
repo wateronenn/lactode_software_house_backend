@@ -1,10 +1,23 @@
 const mongoose = require('mongoose');
 
-const connectDB = async() => {
-    mongoose.set('strictQuery',true);
-    const conn = await mongoose.connect(process.env.MONGO_URL);
+let cached = global.mongoose || { conn: null, promise: null };
+global.mongoose = cached;
 
-    console.log(`MongoDB is connected at : ${conn.connection.host}` );
-}
+const connectDB = async () => {
+  // Return existing connection if available
+  if (cached.conn) return cached.conn;
 
-module.exports = connectDB; 
+  mongoose.set('strictQuery', true);
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGO_URL, {
+      bufferCommands: false,
+    });
+  }
+
+  cached.conn = await cached.promise;
+  console.log(`MongoDB is connected at: ${cached.conn.connection.host}`);
+  return cached.conn;
+};
+
+module.exports = connectDB;
