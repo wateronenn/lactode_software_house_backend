@@ -16,21 +16,34 @@ let roomId;
 let hotelID2;
 let roomId2;
 
-let owerId;
-let owerId2;
 let createdRoomIds = [];
 
 // =======================
 //  DATA GENERATORS
 // =======================
 
-const newHotel = (ownerId) => ({
+const newHotel = () => ({
   name: `Hotel_${Date.now()}`,
   description: "Test hotel",
   location: "Bangkok",
-  ownerID: ownerId,
+  ownerID: "69e4916bce5281ee554d33d6",
+  ownerEmail : "owner@gmail.com",
   tel: `08${Math.floor(10000000 + Math.random()*90000000)}`,
-  email: `hotel${Date.now()}@mail.com`,
+  email: `test${Date.now()}@mail.com`,
+  district: "Watthana",
+  province: "Bangkok",
+  postalcode: "10110",
+  region: "Central"
+});
+
+const newHotel2 = () => ({
+  name: `Hotel_${Date.now()}`,
+  description: "Test hotel",
+  location: "Bangkok",
+  ownerID: "69e49162ce5281ee554d33d5",
+  ownerEmail : "owner2@gmail.com",
+  tel: `08${Math.floor(10000000 + Math.random()*90000000)}`,
+  email: `test${Date.now()}@mail.com`,
   district: "Watthana",
   province: "Bangkok",
   postalcode: "10110",
@@ -89,13 +102,13 @@ beforeAll(async () => {
   const hotelRes = await request(app)
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
-    .send(newHotel(ownerID));
+    .send(newHotel());
   hotelID = hotelRes.body.data._id;
 
   const hotelRes2 = await request(app)
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
-    .send(newHotel(ownerID2));
+    .send(newHotel2());
   hotelID2 = hotelRes2.body.data._id;
 
   const roomRes = await request(app)
@@ -255,17 +268,17 @@ describe('Room API (Integration)', () => {
       .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${userToken}`)
       .send(newRoom(hotelID));
-
+    console.log("userToken:", userToken);
     expect(res.statusCode).toBe(403);
   });
 
-  test('CREATE room (admin fail)', async () => {
+  test('CREATE room (admin)', async () => {
     const res = await request(app)
       .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send(newRoom(hotelID));
 
-    expect(res.statusCode).toBe(403);
+    expect(res.statusCode).toBe(201);
   });
 
   // ===================
@@ -346,13 +359,13 @@ describe('Room API (Integration)', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  test('UPDATE room (admin fail)', async () => {
+  test('UPDATE room (admin)', async () => {
     const res = await request(app)
       .put(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ price: 999 });
 
-    expect(res.statusCode).toBe(403);
+    expect(res.statusCode).toBe(200);
   });
 
   test('UPDATE room not found', async () => {

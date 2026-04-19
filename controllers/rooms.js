@@ -72,7 +72,7 @@ exports.getSingleRoom = async (req, res) => {
 
 // @desc    create room
 // @route   POST api/v1/hotels/:hotelID/rooms/:roomId
-// @access  hotel
+// @access  admin & hotel
 exports.createRoom = async (req, res) => {
     try {
         const hotel = await Hotel.findById(req.params.hotelID);

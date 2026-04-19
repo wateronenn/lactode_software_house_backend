@@ -246,11 +246,11 @@ const router = express.Router({ mergeParams: true });
 
 router.route('/')
     .get(getManyRooms)
-    .post(protect, authorize('hotelOwner'), createRoom)
+    .post(protect, authorize('hotelOwner','admin'), createRoom)
 
 router.route('/:roomID')
     .get(getSingleRoom)                                          
-    .put(protect, authorize('hotelOwner'), updateRoom)
-    .delete(protect, authorize('hotelOwner'), deleteRoom)
+    .put(protect, authorize('hotelOwner','admin'), updateRoom)
+    .delete(protect, authorize('hotelOwner','admin'), deleteRoom)
 
 module.exports = router;

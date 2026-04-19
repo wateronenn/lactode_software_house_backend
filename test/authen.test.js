@@ -204,7 +204,7 @@ describe('Authentication Tests', () => {
         expect(res.body).toHaveProperty('token');
         adminToken = res.body.token;
     });
-
+    
     test('login with phone (user)', async () => {
         const res = await request(app)
             .post('/api/v1/auth/login')
@@ -361,5 +361,6 @@ describe('Authentication Tests', () => {
  
         expect(res.statusCode).toEqual(200);
     });
+
  
 });

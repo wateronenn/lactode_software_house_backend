@@ -20,6 +20,7 @@ const newRandomHotel = () => ({
   location: "Sukhumvit Road, Bangkok",
 
   ownerID: "69da0c7ff8190a65bcf5db14",
+  ownerEmail : "owner@gmail.com",
 
   tel: `08${Math.floor(10000000 + Math.random()*90000000)}`,
   email: `test${Date.now()}@mail.com`,

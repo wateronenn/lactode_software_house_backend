@@ -9,11 +9,13 @@ let adminToken;
 let ownerToken;
 let owner2Token;
 let userToken;
+let userToken2;
 
 let hotelID;
 let roomID;
 let bookingID;
 let userID;
+let userID2;
 
 // =======================
 // 🔥 DATA GENERATOR
@@ -23,9 +25,10 @@ const newHotel = () => ({
   name: `Hotel_${Date.now()}`,
   description: "Test hotel",
   location: "Bangkok",
-  ownerID: "69e4916bce5281ee554d33d6", // owner
+  ownerID: "69e4916bce5281ee554d33d6",
+  ownerEmail : "owner@gmail.com" ,// owner
   tel: `08${Math.floor(10000000 + Math.random()*90000000)}`,
-  email: `hotel${Date.now()}@mail.com`,
+  email: `test${Date.now()}@mail.com`,
   district: "Watthana",
   province: "Bangkok",
   postalcode: "10110",
@@ -65,11 +68,12 @@ beforeAll(async () => {
   const adminRes = await request(app)
     .post('/api/v1/auth/login')
     .send({ identifier: 'admin@gmail.com', password: '123456' });
+  console.log(`admin token : ${adminRes.body.token}` )
   adminToken = adminRes.body.token;
 
   const ownerRes = await request(app)
     .post('/api/v1/auth/login')
-    .send({ identifier: 'owner@gmail.com', password: '123456' });
+    .send({ identifier: 'owner@gmail.com', password: '123456' });``
   ownerToken = ownerRes.body.token;
 
   const owner2Res = await request(app)
@@ -81,6 +85,7 @@ beforeAll(async () => {
     .post('/api/v1/auth/login')
     .send({ identifier: 'user@gmail.com', password: '123456' });
   userToken = userRes.body.token;
+  console.log(`Status : ${userRes.status} , body : ${userRes.body}, token : ${userRes.body.token}`)
   userID = userRes.body.user._id;
 
   const userRes2 = await request(app)
@@ -95,7 +100,12 @@ beforeAll(async () => {
     .set('Authorization', `Bearer ${adminToken}`)
     .send(newHotel());
 
+  console.log("STATUS:", hotelRes.statusCode);
+  console.log("BODY:", hotelRes.body); 
+  
   hotelID = hotelRes.body.data._id;
+  console.log("hotelID:", hotelID); 
+
 
   // 🛏️ create room
   const roomRes = await request(app)
@@ -104,7 +114,7 @@ beforeAll(async () => {
     .send(newRoom(hotelID));
 
     console.log(roomRes.statusCode);
-console.log(roomRes.body);
+    console.log(roomRes.body);
   roomID = roomRes.body.data._id;
 });
 
@@ -154,6 +164,7 @@ describe('Booking API (Integration)', () => {
     bookingID = res.body.data._id;
 
     expect(res.body.user._id).toBe(userID);
+    console.log("BODY:", res.body);
   });
 
   // ===================

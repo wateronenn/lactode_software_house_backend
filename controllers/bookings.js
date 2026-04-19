@@ -162,8 +162,8 @@ exports.addBooking = async (req, res) => {
 
     const bookedCount = await Booking.countDocuments({
       roomID: roomID,
-      checkInDate: { $lt: inDate },
-      checkOutDate: { $gt: outDate }
+      checkInDate: { $lt: outDate },
+      checkOutDate: { $gt: inDate }
     });
 
     if (bookedCount >= room.amount) {
