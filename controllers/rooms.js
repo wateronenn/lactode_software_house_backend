@@ -9,7 +9,7 @@ const Booking = require('../models/Booking')
 exports.getManyRooms = async (req,res)=>{
     try{
         const {checkInDate , checkOutDate} = req.query
-
+        const rooms = await Room.find({ hotelID: req.params.hotelID });
         if (!checkInDate || !checkOutDate) {
         return res.status(200).json({
             success: true,
@@ -18,7 +18,7 @@ exports.getManyRooms = async (req,res)=>{
         }
         const inDate = new Date(checkInDate);
         const outDate = new Date(checkOutDate);
-        const rooms = await Room.find({hotelID: req.params.hotelID})
+        
         
         const results = await Promise.all(
             rooms.map(async (room) => {
