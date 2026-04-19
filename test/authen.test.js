@@ -263,6 +263,15 @@ describe('Authentication Tests', () => {
         expect(res.statusCode).toEqual(200);
     });
 
+    //GET ME
+    test('get current user profile', async () => {
+        const res = await request(app)
+            .get('/api/v1/auth/me')
+            .set('Authorization', `Bearer ${userToken}`); 
+        expect(res.statusCode).toEqual(200);
+        expect(res.body.data).toHaveProperty('email', userIdentifier);
+    });
+
     //UPDATE 
     test('update user profile', async () => {
         const res = await request(app)
