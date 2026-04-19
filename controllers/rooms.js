@@ -1,5 +1,6 @@
 const Room = require('../models/Room')
 const Hotel = require('../models/Hotel');
+const Booking = require('../models/Booking')
 
 
 // @desc    view all rooms
@@ -7,11 +8,36 @@ const Hotel = require('../models/Hotel');
 // @access  Public
 exports.getManyRooms = async (req,res)=>{
     try{
-        const rooms = await Room.find({hotelID: req.params.hotelID})
-        res.status(200).json({
-            success:true,
-            count:rooms.length,
+        const {checkInDate , checkOutDate} = req.query
+
+        if (!checkInDate || !checkOutDate) {
+        return res.status(200).json({
+            success: true,
             data: rooms
+        });
+        }
+        const inDate = new Date(checkInDate);
+        const outDate = new Date(checkOutDate);
+        const rooms = await Room.find({hotelID: req.params.hotelID})
+        
+        const results = await Promise.all(
+            rooms.map(async (room) => {
+                const bookedCount = await Booking.countDocuments({
+                    roomID: room._id,
+                    checkInDate: { $lt: outDate },
+                    checkOutDate: { $gt: inDate }
+                });
+
+                return {
+                ...room.toObject(),
+                available: room.amount - bookedCount
+                };
+            })
+        );
+
+        res.status(200).json({
+        success: true,
+        data: results
         });
     }
     catch(err){

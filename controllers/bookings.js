@@ -135,6 +135,20 @@ exports.addBooking = async (req, res) => {
         message: "Invalid roomID",
       });
     }
+
+    const bookedCount = await Booking.countDocuments({
+      roomID: roomID,
+      checkInDate: { $lt: outDate },
+      checkOutDate: { $gt: inDate }
+    });
+
+    if (bookedCount >= room.amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Room fully booked"
+      });
+    }
+
     // assign user
     if (req.user.role !== "admin") {
       req.body.user = req.user.id;
