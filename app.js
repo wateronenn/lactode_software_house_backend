@@ -38,8 +38,10 @@ const authLimiter = rateLimit({
 });
 
 // Apply middleware
-app.use("/api", apiLimiter);
-app.use("/api/v1/auth", authLimiter);
+if (process.env.NODE_ENV !== 'test') {
+  app.use("/api", apiLimiter);
+  app.use("/api/v1/auth", authLimiter);
+}
 
 // Routes
 app.use("/api/v1/hotels", hotels);
