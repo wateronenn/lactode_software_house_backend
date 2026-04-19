@@ -3,6 +3,7 @@ require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
+const { create } = require('../models/User');
 jest.setTimeout(20000); // เพิ่มเวลาเป็น 20 วิ
 
 let adminToken;
@@ -17,6 +18,7 @@ let roomId2;
 
 let owerId;
 let owerId2;
+let createdRoomIds = [];
 
 // =======================
 //  DATA GENERATORS
@@ -101,33 +103,40 @@ beforeAll(async () => {
     .set('Authorization', `Bearer ${ownerToken}`)
     .send(newRoom(hotelID));
   roomId = roomRes.body.data._id;
+  createdRoomIds.push({roomId: roomId, hotelID: hotelID, ownerToken: ownerToken});
 
   const roomRes2 = await request(app)
     .post(`/api/v1/hotels/${hotelID2}/rooms`)
     .set('Authorization', `Bearer ${ownerToken2}`)
     .send(newRoom(hotelID2));
   roomId2 = roomRes2.body.data._id;
+  createdRoomIds.push({roomId: roomId2, hotelID: hotelID2, ownerToken: ownerToken2});
 });
 
 
 afterAll(async () => {
-
+ try {
+    for (const r of createdRoomIds ) {
   await request(app)
-    .delete(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
-    .set('Authorization', `Bearer ${adminToken}`);
+    .delete(`/api/v1/hotels/${r.hotelID}/rooms/${r.roomId}`)
+    .set('Authorization', `Bearer ${r.ownerToken}`);
+}
 
-  await request(app)
-    .delete(`/api/v1/hotels/${hotelID2}/rooms/${roomId2}`)
-    .set('Authorization', `Bearer ${adminToken}`);
-
-  await request(app)
-    .delete(`/api/v1/hotels/${hotelID}`)
-    .set('Authorization', `Bearer ${adminToken}`);
-
-  await request(app)
-    .delete(`/api/v1/hotels/${hotelID2}`)
-    .set('Authorization', `Bearer ${adminToken}`);  
-
+  if (hotelID) {
+    await request(app)
+      .delete(`/api/v1/hotels/${hotelID}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+  }    
+  if (hotelID2) {
+    await request(app)
+      .delete(`/api/v1/hotels/${hotelID2}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+  }
+  
+  } catch (err) {
+    console.error('Cleanup error:', err.message);
+  }
+  
   await mongoose.connection.close();
 });
 
@@ -415,6 +424,7 @@ describe('Room API (Integration)', () => {
       .set('Authorization', `Bearer ${ownerToken}`)
       .send(newRoom(hotelID));
     const newRoomId = createRes.body.data._id;
+    createdRoomIds.push({roomId: newRoomId, hotelID: hotelID,ownerToken: ownerToken});
 
     expect(createRes.statusCode).toBe(201);
 

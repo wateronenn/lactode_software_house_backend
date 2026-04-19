@@ -160,6 +160,9 @@ exports.addBooking = async (req, res) => {
       });
     }
 
+      const inDate = new Date(checkInDate);
+    const outDate = new Date(checkOutDate);
+
     const bookedCount = await Booking.countDocuments({
       roomID: roomID,
       checkInDate: { $lt: inDate },

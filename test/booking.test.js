@@ -125,7 +125,7 @@ afterAll(async () => {
   }
   await request(app)
   .delete(`/api/v1/hotels/${hotelID}/rooms/${roomID}`)
-  .set('Authorization', `Bearer ${adminToken}`);
+  .set('Authorization', `Bearer ${ownerToken}`);
 
   await request(app)
     .delete(`/api/v1/hotels/${hotelID}`)
