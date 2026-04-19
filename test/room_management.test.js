@@ -216,7 +216,12 @@ describe('Room API (Integration)', () => {
       .send(newRoom(hotelID));
 
     expect(res.statusCode).toBe(201);
-    roomId = res.body.data._id;
+    const newRoomId = res.body.data._id;
+    createdRoomIds.push({
+    roomId: newRoomId,
+    hotelID: hotelID,
+    ownerToken: ownerToken
+  });
   });
 
   //** invalid */
