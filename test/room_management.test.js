@@ -112,19 +112,19 @@ beforeAll(async () => {
 afterAll(async () => {
 
   request(app)
-    .delete(`/api/v1/hotels/${hotelId}/rooms/${roomId}`)
+    .delete(`/api/v1/hotels/${hotelID}/rooms/${roomId}`)
     .set('Authorization', `Bearer ${adminToken}`);
 
   request(app)
-    .delete(`/api/v1/hotels/${hotelId2}/rooms/${roomId2}`)
+    .delete(`/api/v1/hotels/${hotelID2}/rooms/${roomId2}`)
     .set('Authorization', `Bearer ${adminToken}`);
 
   request(app)
-    .delete(`/api/v1/hotels/${hotelId}`)
+    .delete(`/api/v1/hotels/${hotelID}`)
     .set('Authorization', `Bearer ${adminToken}`);
 
   request(app)
-    .delete(`/api/v1/hotels/${hotelId2}`)
+    .delete(`/api/v1/hotels/${hotelID2}`)
     .set('Authorization', `Bearer ${adminToken}`);  
 
   await mongoose.connection.close();
