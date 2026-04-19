@@ -1,4 +1,5 @@
 const Hotel = require('../models/Hotel')
+const User = require('../models/User')
 
 // @desc    view all hotels
 // @route   GET /api/v1/hotels
@@ -93,6 +94,18 @@ exports.createHotel = async (req,res,next) => {
         })
     }
     try{
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+
+         if (!user) {
+        return res.status(400).json({
+            success: false,
+            message: "User not found",
+        });
+        }
+
+        req.body.ownerID = user._id;
+
         const hotel = await Hotel.create(req.body)
 
         res.status(201).json({
