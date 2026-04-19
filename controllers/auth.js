@@ -8,6 +8,13 @@ exports.register = async (req, res, next) => {
   try {
     const { username, email,tel,firstname, lastname, password, role  } = req.body;
 
+    const existingTel = await User.findOne({ tel: req.body.tel });
+    if (existingTel) {
+    return res.status(400).json({
+      success: false,
+      message: 'Telephone already exists'
+    });
+    }
     // Prevent user from setting role manually
     const user = await User.create({
       username,
