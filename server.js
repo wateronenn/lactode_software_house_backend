@@ -53,3 +53,4 @@ const swaggerOptions = {
 
 const swaggerDoc = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
+module.exports = connectDB().then(() => app);
