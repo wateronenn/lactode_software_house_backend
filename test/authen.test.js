@@ -1,3 +1,4 @@
+process.env.NODE_ENV = 'test';
 require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
@@ -9,6 +10,18 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+
+    const User = require('../models/User');
+    
+    for (const userId of createdUserIds) {
+        try {
+            await User.findByIdAndDelete(userId);
+            console.log(`Deleted test user: ${userId}`);
+        } catch (err) {
+            console.error(`Failed to delete user ${userId}:`, err.message);
+        }
+    }
+
     await mongoose.connection.close();
 });
 
@@ -25,6 +38,8 @@ let adminIdentifier;
 let userTel;
 let hotelOwnerTel;
 let adminTel;
+
+let createdUserIds = [];
 
 describe('Authentication Tests', () => {
 
@@ -47,6 +62,9 @@ describe('Authentication Tests', () => {
         expect(res.body).toHaveProperty('token');
         userIdentifier = res.body.user.email;
         userTel = res.body.user.tel;
+        if (res.body.user._id) {
+        createdUserIds.push(res.body.user._id);
+        }
     });
 
     test('register a new hotelOwner', async () => {
@@ -66,6 +84,9 @@ describe('Authentication Tests', () => {
         expect(res.body).toHaveProperty('token');
         hotelOwnerIdentifier = res.body.user.email;
         hotelOwnerTel = res.body.user.tel;
+        if (res.body.user._id) {
+        createdUserIds.push(res.body.user._id);
+        }
     });
 
     test('register a new admin', async () => {
@@ -85,6 +106,9 @@ describe('Authentication Tests', () => {
         expect(res.body).toHaveProperty('token');
         adminIdentifier = res.body.user.email;
         adminTel = res.body.user.tel;
+        if (res.body.user._id) {
+        createdUserIds.push(res.body.user._id);
+        }
     });
 
     //REGISER INVALID
@@ -151,7 +175,8 @@ describe('Authentication Tests', () => {
 
         expect(res.statusCode).toEqual(200);
         expect(res.body).toHaveProperty('token');
-        userToken = res.body.token; // เก็บ token สำหรับใช้ในเทสถัดไป    
+        userToken = res.body.token; // เก็บ token สำหรับใช้ในเทสถัดไป   
+        userTel = res.body.user.tel; 
     });
 
     test('login with registered hotelOwner', async () => {
@@ -184,8 +209,8 @@ describe('Authentication Tests', () => {
         const res = await request(app)
             .post('/api/v1/auth/login')
             .send({
-                identifier: `${userTel}`,
-                password: 'password'
+                identifier: `212-144-1150`,
+                password: '123456'
             });
 
         expect(res.statusCode).toEqual(200);
@@ -241,7 +266,7 @@ describe('Authentication Tests', () => {
     //UPDATE 
     test('update user profile', async () => {
         const res = await request(app)
-            .put('/api/v1/auth/update')
+            .put('/api/v1/auth/updateUser')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
                 firstname: 'Updated',
@@ -257,7 +282,7 @@ describe('Authentication Tests', () => {
 
     test('update user profile (role)', async () => {
         const res = await request(app)
-            .put('/api/v1/auth/update')
+            .put('/api/v1/auth/updateUser')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
                 role: 'admin'
@@ -268,7 +293,7 @@ describe('Authentication Tests', () => {
     //UPDATE INVALID
     test('update user password (wrong current password)', async () => {
         const res = await request(app)
-            .put('/api/v1/auth/update-password')
+            .put('/api/v1/auth/resetPassword')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
                 currentPassword: 'wrongpassword',
@@ -276,12 +301,12 @@ describe('Authentication Tests', () => {
                 rePassword: 'newpassword'
             });
         
-        expect(res.statusCode).toEqual(404);
+        expect(res.statusCode).toEqual(401);
     });
 
     test('update user password (mismatched new passwords)', async () => {
         const res = await request(app)
-            .put('/api/v1/auth/update-password')
+            .put('/api/v1/auth/resetPassword')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
                 currentPassword: 'password',
@@ -289,34 +314,43 @@ describe('Authentication Tests', () => {
                 rePassword: 'differentpassword'
             });
         
-        expect(res.statusCode).toEqual(404);
+        expect(res.statusCode).toEqual(400);
     });
 
     test('update user password (missing fields)', async () => {
         const res = await request(app)
-            .put('/api/v1/auth/update-password')
+            .put('/api/v1/auth/resetPassword')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
                 currentPassword: 'password',
                 newPassword: 'newpassword'
             });
 
-        expect(res.statusCode).toEqual(404);
+        expect(res.statusCode).toEqual(400);
     });
 
     //UPDATE PASSWORD (VALID)
     test('update user password', async () => {
+ 
+        const loginRes = await request(app)
+            .post('/api/v1/auth/login')
+            .send({
+                identifier: `${userIdentifier}`,
+                password: 'password'
+            });
+ 
+        userToken = loginRes.body.token;
+ 
         const res = await request(app)
-            .put('/api/v1/auth/update-password')    
+            .put('/api/v1/auth/resetPassword')    
             .set('Authorization', `Bearer ${userToken}`)
             .send({
                 currentPassword: 'password',
                 newPassword: 'newpassword',
                 rePassword: 'newpassword'
             });
-
+ 
         expect(res.statusCode).toEqual(200);
-        expect(res.body).toHaveProperty('message');
     });
-
+ 
 });

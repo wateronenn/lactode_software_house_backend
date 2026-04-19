@@ -9,7 +9,7 @@ exports.getAllUsers = async(req,res,next) => {
         if(req.user.role !== "admin"){
           return res.status(403).json({
             success:false,
-            msg: "Not authorized to access this route"
+            message: "Not authorized to access this route"
           })
         }
         const users = await User.find().select('-password');
@@ -22,7 +22,7 @@ exports.getAllUsers = async(req,res,next) => {
     catch(err){
       return res.status(500).json({
         success:false,
-        msg:err.message
+        message:err.message
       })
     }
 }
@@ -134,6 +134,12 @@ exports.logout = async (req, res, next) => {
 };
 
 exports.updateUser = async (req, res, next) => {
+  if (req.body.role) {
+  return res.status(404).json({
+    success: false,
+    message: 'Cannot update role'
+  });
+}
   try {
     const {username,email,tel,firstname,lastname,picture} = req.body;
     const user = await User.findByIdAndUpdate(req.user.id, { username, email, tel, firstname, lastname, picture }, {
@@ -144,20 +150,20 @@ exports.updateUser = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        msg: 'User not found'
+        message: 'User not found'
       });
     }
    
     return res.status(200).json({
       success: true,
-      msg: 'User information updated successfully.',
+      message: 'User information updated successfully.',
       data: user
     });
 
   } catch (e) {
     res.status(500).json({
       success: false,
-      msg: `Cannot update user, ${e}`
+      message: `Cannot update user, ${e}`
     });
   }
 };
@@ -179,12 +185,20 @@ exports.getMe = async (req, res, next) => {
 exports.resetPassword = async (req,res,next) => {
   try{
     const {currentPassword,newPassword,rePassword} = req.body;
-    const user = await User.findById(req.user.id).select('+password');
 
+    if (!currentPassword || !newPassword || !rePassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide all fields"
+      });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+  
     if(!user){
       return res.status(404).json({
         success:false,
-        msg:"User cannot be found"
+        message:"User cannot be found"
       })
     }
 
@@ -192,13 +206,13 @@ exports.resetPassword = async (req,res,next) => {
     if(!isMatch){
       return res.status(401).json({
         success:false,
-        msg:"Current password is incorrect"
+        message:"Current password is incorrect"
       });
     }
     if(newPassword !== rePassword){
       return res.status(400).json({
         success:false,
-        msg: "New password comfirmation mismatch"
+        message: "New password comfirmation mismatch"
       })
     }
     user.password = newPassword;
@@ -206,13 +220,13 @@ exports.resetPassword = async (req,res,next) => {
 
     return res.status(200).json({
       success:true,
-      msg: "Password changed successfully."
+      message: "Password changed successfully."
     })
   }
   catch(e){
     res.status(500).json({
       success:false,
-      msg:(`Cannot change password, ${e}`)
+      message:(`Cannot change password, ${e}`)
     })
   }
 }

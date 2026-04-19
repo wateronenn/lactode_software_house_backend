@@ -1,3 +1,4 @@
+process.env.NODE_ENV = 'test';
 require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
@@ -110,6 +111,20 @@ beforeAll(async () => {
 // =======================
 
 afterAll(async () => {
+
+  const bookingsRes = await request(app)
+    .get('/api/v1/bookings')
+    .set('Authorization', `Bearer ${adminToken}`);
+  
+  for (const booking of bookingsRes.body.data) {
+    await request(app)
+      .delete(`/api/v1/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+  }
+  await request(app)
+  .delete(`/api/v1/hotels/${hotelID}/rooms/${roomID}`)
+  .set('Authorization', `Bearer ${adminToken}`);
+
   await request(app)
     .delete(`/api/v1/hotels/${hotelID}`)
     .set('Authorization', `Bearer ${adminToken}`);
