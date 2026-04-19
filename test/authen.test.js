@@ -154,7 +154,7 @@ describe('Authentication Tests', () => {
                 firstname: 'Test',
                 lastname: 'User',
                 email: `${Date.now()}user@example.com`,
-                tel: '212-144-1150',
+                tel: '875-391-7323',
                 role: 'user',
                 password: 'password'
             });
@@ -209,7 +209,7 @@ describe('Authentication Tests', () => {
         const res = await request(app)
             .post('/api/v1/auth/login')
             .send({
-                identifier: `212-144-1150`,
+                identifier: `875-391-7323`,
                 password: '123456'
             });
 
