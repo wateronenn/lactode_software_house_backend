@@ -1,9 +1,11 @@
 const express = require("express");
+require("dotenv").config({ path: "./config/config.env" });
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const { xss } = require("express-xss-sanitizer");
 const rateLimit = require("express-rate-limit");
-
+const connectDB = require("./config/db");
+connectDB();
 // Route files
 const auth = require("./routes/auth");
 const hotels = require("./routes/hotels");
