@@ -130,8 +130,12 @@ exports.updateRoom = async (req, res) => {
 exports.deleteRoom = async (req, res) => {
     try {
         const room = await Room.findById(req.params.roomID);
+        const hotel = await Hotel.findById(req.params.hotelID);
         if (!room) {
             return res.status(404).json({ success: false, message: 'Room not found' });
+        }
+        if(!hotel){
+            return res.status(404).json({ success: false, message: 'Hotel not found' });
         }
 
         if (req.user.role === 'hotelOwner') {
