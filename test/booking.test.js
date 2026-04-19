@@ -1,3 +1,4 @@
+process.env.NODE_ENV = 'test';
 require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
@@ -22,7 +23,7 @@ const newHotel = () => ({
   name: `Hotel_${Date.now()}`,
   description: "Test hotel",
   location: "Bangkok",
-  ownerID: "69da0c7ff8190a65bcf5db14", // owner
+  ownerID: "69e4916bce5281ee554d33d6", // owner
   tel: `08${Math.floor(10000000 + Math.random()*90000000)}`,
   email: `hotel${Date.now()}@mail.com`,
   district: "Watthana",
@@ -63,7 +64,7 @@ beforeAll(async () => {
   // 🔐 login
   const adminRes = await request(app)
     .post('/api/v1/auth/login')
-    .send({ identifier: 'admin1@gmail.com', password: '123456' });
+    .send({ identifier: 'admin@gmail.com', password: '123456' });
   adminToken = adminRes.body.token;
 
   const ownerRes = await request(app)
@@ -102,6 +103,8 @@ beforeAll(async () => {
     .set('Authorization', `Bearer ${ownerToken}`)
     .send(newRoom(hotelID));
 
+    console.log(roomRes.statusCode);
+console.log(roomRes.body);
   roomID = roomRes.body.data._id;
 });
 
@@ -110,6 +113,20 @@ beforeAll(async () => {
 // =======================
 
 afterAll(async () => {
+
+  const bookingsRes = await request(app)
+    .get('/api/v1/bookings')
+    .set('Authorization', `Bearer ${adminToken}`);
+  
+  for (const booking of bookingsRes.body.data) {
+    await request(app)
+      .delete(`/api/v1/bookings/${booking._id}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+  }
+  await request(app)
+  .delete(`/api/v1/hotels/${hotelID}/rooms/${roomID}`)
+  .set('Authorization', `Bearer ${adminToken}`);
+
   await request(app)
     .delete(`/api/v1/hotels/${hotelID}`)
     .set('Authorization', `Bearer ${adminToken}`);

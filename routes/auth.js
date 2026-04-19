@@ -306,7 +306,7 @@ router.post('/login',login);
 router.get('/',protect,authorize('admin'),getAllUsers);
 router.get('/me',protect,getMe);
 router.get('/logout',logout,);
-router.post('/resetPassword',protect,resetPassword);
+router.put('/resetPassword',protect,resetPassword);
 router.put('/updateUser',protect,updateUser);
 
 module.exports = router;
