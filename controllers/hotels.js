@@ -53,36 +53,92 @@ exports.getManyHotels = async (req, res, next) => {
 // @desc    view single hotel
 // @route   GET /api/v1/hotels/:hotelID
 // @access  Public
-exports.getSingleHotel = async (req, res, next) => {
-    try {
-        const hotel = await Hotel.findById(req.params.hotelID)
+exports.getSingleHotel = async (req, res) => {
+  try {
+    const { hotelID } = req.params;
+    const { checkInDate, checkOutDate, people } = req.query;
 
-        if (!hotel) {
-            return res.status(404).json({
-                success: false,
-                msg: 'Hotel not found'
-            })
-        }
+    const hotel = await Hotel.findById(hotelID);
 
-        res.status(200).json({
-            success: true,
-            data: hotel
-        })
-    } catch (err) {
-        // Handle invalid MongoDB ObjectId format
-        if (err.name === 'CastError') {
-            return res.status(400).json({
-                success: false,
-                msg: `Invalid hotel ID format: ${req.params.hotelID}`
-            })
-        }
-
-        res.status(500).json({
-            success: false,
-            msg: err.message
-        })
+    if (!hotel) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Hotel not found'
+      });
     }
-}
+
+    // filter rooms by capacity
+    const rooms = await Room.find({
+      hotelID,
+      people: { $gte: Number(people || 1) }
+    });
+
+    let inDate = null;
+    let outDate = null;
+
+    // ✅ validate dates (once)
+    if (checkInDate && checkOutDate) {
+      inDate = new Date(checkInDate);
+      outDate = new Date(checkOutDate);
+
+      if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          msg: "Invalid date format"
+        });
+      }
+
+      if (outDate <= inDate) {
+        return res.status(400).json({
+          success: false,
+          msg: "checkOutDate must be after checkInDate"
+        });
+      }
+    }
+
+    // ✅ ALWAYS compute availability
+    const results = await Promise.all(
+      rooms.map(async (room) => {
+        let bookedCount = 0;
+
+        if (inDate && outDate) {
+          bookedCount = await Booking.countDocuments({
+            roomID: room._id,
+            checkInDate: { $lt: outDate },
+            checkOutDate: { $gt: inDate },
+          });
+        }
+
+        return {
+          ...room.toObject(),
+          bookedNumber: bookedCount,
+          available: Math.max(0, room.availableNumber - bookedCount)
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        ...hotel.toObject(),
+        rooms: results
+      }
+    });
+
+  } catch (err) {
+    if (err.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid hotel ID format"
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      msg: err.message
+    });
+  }
+};
 // @desc    create hotel
 // @route   POST api/v1/hotels
 // @access  admin

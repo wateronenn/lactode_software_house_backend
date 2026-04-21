@@ -6,53 +6,63 @@ const Booking = require('../models/Booking')
 // @desc    view all rooms
 // @route   GET api/v1/hotels/:hotelID/rooms
 // @access  Public
-exports.getManyRooms = async (req,res)=>{
-    try{
-        const {checkInDate , checkOutDate} = req.query
-        const rooms = await Room.find({ hotelID: req.params.hotelID });
-        if (!checkInDate || !checkOutDate) {
-        return res.status(200).json({
-            success: true,
-            data: rooms
-        });
+exports.getManyRooms = async (req, res) => {
+  try {
+    const { checkInDate, checkOutDate, people } = req.query;
+
+    const filter = { hotelID: req.params.hotelID };
+    if (people) filter.people = { $gte: Number(people) };
+
+    const rooms = await Room.find(filter);
+
+    let inDate = null;
+    let outDate = null;
+
+    if (checkInDate && checkOutDate) {
+      inDate = new Date(checkInDate);
+      outDate = new Date(checkOutDate);
+
+      if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) {
+        return res.status(400).json({ success: false, msg: 'Invalid date format' });
+      }
+      if (outDate <= inDate) {
+        return res.status(400).json({ success: false, msg: 'checkOutDate must be after checkInDate' });
+      }
+    }
+
+    // ALWAYS compute availability
+    const results = await Promise.all(
+      rooms.map(async (room) => {
+        let bookedCount = 0;
+
+        if (inDate && outDate) {
+          bookedCount = await Booking.countDocuments({
+            roomID: room._id,
+            checkInDate: { $lt: outDate },
+            checkOutDate: { $gt: inDate },
+          });
         }
-        const inDate = new Date(checkInDate);
-        const outDate = new Date(checkOutDate);
-        
-        
-        const results = await Promise.all(
-            rooms.map(async (room) => {
-                const bookedCount = await Booking.countDocuments({
-                    roomID: room._id,
-                    checkInDate: { $lt: outDate },
-                    checkOutDate: { $gt: inDate }
-                });
 
-                return {
-                ...room.toObject(),
-                available: room.amount - bookedCount
-                };
-            })
-        );
+        return {
+          ...room.toObject(),
+          bookedNumber: bookedCount,
+          available: Math.max(0, room.availableNumber - bookedCount),
+        };
+      })
+    );
 
-        res.status(200).json({
-        success: true,
-        data: results
-        });
-    }
-    catch(err){
-        res.status(500).json({
-            success: false,
-            msg: `Cannot get rooms: ${err.message}`
-        });
-    }
-}
+    res.status(200).json({ success: true, data: results });
+  } catch (err) {
+    res.status(500).json({ success: false, msg: `Cannot get rooms: ${err.message}` });
+  }
+};
 
 // @desc    view single rooms
 // @route   GET api/v1/hotels/:hotelID/rooms/:id
 // @access  Public
 exports.getSingleRoom = async (req, res) => {
     try {
+        const {checkInDate , checkOutDate} = req.query
         const room = await Room.findById(req.params.roomID).populate('hotelID', 'name location');
 
         if (!room) {
@@ -63,8 +73,56 @@ exports.getSingleRoom = async (req, res) => {
         if (room.hotelID._id.toString() !== req.params.hotelID) {
             return res.status(400).json({ success: false, message: 'Room does not belong to this hotel' });
         }
+        const rooms = await Room.find({
+      hotelID,
+      people: { $gte: Number(people || 1) }
+    });
 
-        res.status(200).json({ success: true, data: room });
+    let inDate = null;
+    let outDate = null;
+
+    // ✅ validate dates (once)
+    if (checkInDate && checkOutDate) {
+      inDate = new Date(checkInDate);
+      outDate = new Date(checkOutDate);
+
+      if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          msg: "Invalid date format"
+        });
+      }
+
+      if (outDate <= inDate) {
+        return res.status(400).json({
+          success: false,
+          msg: "checkOutDate must be after checkInDate"
+        });
+      }
+    }
+
+    // ✅ ALWAYS compute availability
+    const results = await Promise.all(
+      rooms.map(async (room) => {
+        let bookedCount = 0;
+
+        if (inDate && outDate) {
+          bookedCount = await Booking.countDocuments({
+            roomID: room._id,
+            checkInDate: { $lt: outDate },
+            checkOutDate: { $gt: inDate },
+          });
+        }
+
+        return {
+          ...room.toObject(),
+          bookedNumber: bookedCount,
+          available: Math.max(0, room.availableNumber - bookedCount)
+        };
+      })
+    );
+        
+        res.status(200).json({ success: true, data: results });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
