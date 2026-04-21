@@ -215,10 +215,11 @@ exports.deleteRoom = async (req, res) => {
     try {
         const room = await Room.findById(req.params.roomID);
         const hotel = await Hotel.findById(req.params.hotelID);
+
         if (!room) {
             return res.status(404).json({ success: false, message: 'Room not found' });
         }
-        if(!hotel){
+        if (!hotel) {
             return res.status(404).json({ success: false, message: 'Hotel not found' });
         }
 
@@ -229,12 +230,30 @@ exports.deleteRoom = async (req, res) => {
             }
         }
 
+        // Find all bookings for this room
+        const bookings = await Booking.find({ room: req.params.roomID });
+
+        if (bookings.length > 0) {
+            // Find the latest checkout date among all bookings
+            const latestCheckout = bookings.reduce((latest, booking) => {
+                return booking.checkOutDate > latest ? booking.checkOutDate : latest;
+            }, new Date(0));
+
+            const formattedDate = latestCheckout.toISOString().split('T')[0];
+
+            return res.status(400).json({
+                success: false,
+                message: `Cannot delete room: active bookings exist. You can delete this room after ${formattedDate}.`
+            });
+        }
+
         await Hotel.findByIdAndUpdate(room.hotelID, {
-              $pull: { rooms: room._id }
+            $pull: { rooms: room._id }
         });
 
         await room.deleteOne();
         res.status(200).json({ success: true, data: {} });
+
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

@@ -255,24 +255,46 @@ exports.updateHotel = async (req, res, next) => {
 // @desc    delete hotel
 // @route   DELETE api/v1/hotels/:hotelID
 // @access  admin
-exports.deleteHotel = async(req,res,next) => {
-    if(req.user.role !== 'admin'){
-        res.status(403).json({
-            success:false,
-            msg:"Not authorized to access this path"
-        })
+exports.deleteHotel = async (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({
+            success: false,
+            msg: "Not authorized to access this path"
+        });
     }
-    try{
-        const hotel = await Hotel.findByIdAndDelete(req.params.hotelID);
 
-        if(!hotel){
-            return res.status(400).json({success:false});
+    try {
+        const hotel = await Hotel.findById(req.params.hotelID);
+
+        if (!hotel) {
+            return res.status(404).json({ success: false, msg: "Hotel not found" });
         }
-        res.status(200).json({success:true,data:{}});
-    }catch (err){
-        res.status(400).json({
-            success:false,
-            msg:`Cannot delete hotel : ${err.message}`
-        })
+
+        // Find all bookings for this hotel
+        const bookings = await Booking.find({ hotel: req.params.hotelID });
+
+        if (bookings.length > 0) {
+            // Find the latest checkout date among all bookings
+            const latestCheckout = bookings.reduce((latest, booking) => {
+                return booking.checkOutDate > latest ? booking.checkOutDate : latest;
+            }, new Date(0));
+
+            const formattedDate = latestCheckout.toISOString().split('T')[0];
+
+            return res.status(400).json({
+                success: false,
+                msg: `Cannot delete hotel: active bookings exist. You can delete this hotel after ${formattedDate}.`
+            });
+        }
+
+        await Hotel.findByIdAndDelete(req.params.hotelID);
+
+        res.status(200).json({ success: true, data: {} });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            msg: `Cannot delete hotel: ${err.message}`
+        });
     }
-}
+};
