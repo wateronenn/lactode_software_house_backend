@@ -170,9 +170,9 @@ exports.updateUser = async (req, res, next) => {
 
 
 
-// @desc   delete user
-// @route   DELETE /api/v1/auth/:id
-// @access  admin
+// @desc   get user account info
+// @route   GET /api/v1/auth/me
+// @access  private
 exports.getMe = async (req, res, next) => {
   const user = await User.findById(req.user.id);
 
@@ -182,36 +182,40 @@ exports.getMe = async (req, res, next) => {
   });
 };
 
-exports.deleteUser = async (req,res,next) => {
-    try{
-        if(req.user.role !== "admin"){
-          return res.status(403).json({
-            success:false,
-            message: "Not authorized to access this route"
-          })
-        }
-        const user = await User.find().select('-password');
-        if(!user){
-          return res.status(404).json({
-            success: false,
-            message: "User not found",
-          });
-        }
+// @desc   delete user
+// @route   DELETE /api/v1/auth/:id
+// @access  admin
+exports.deleteUser = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to access this route"
+      });
+    }
 
-        await user.deleteOne()
-        return res.status(200).json({
-          success : true,
-          total : users.length,
-          data : users
-        })
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
-    catch(err){
-      return res.status(500).json({
-        success:false,
-        message:err.message
-      })
-    }
-}
+
+    return res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+      data: {}
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
 // @desc   change password
 // @route   PUT /api/v1/auth/me/resetPassword
 // @access  private
