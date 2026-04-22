@@ -11,6 +11,7 @@ const auth = require("./routes/auth");
 const hotels = require("./routes/hotels");
 const bookings = require("./routes/bookings");
 const rooms = require("./routes/rooms");
+const compare = require("./routes/favorite/compare");
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/v1/hotels", hotels);
 app.use("/api/v1/auth", auth);
 app.use("/api/v1/hotels/:hotelId/rooms", rooms);
 app.use("/api/v1/bookings", bookings);
+app.use("/api/v1/favorite/compare", compare);
 
 // Query parser
 app.set("query parser", "extended");
