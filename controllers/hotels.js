@@ -1,4 +1,5 @@
 const Hotel = require('../models/Hotel')
+const User = require('../models/User')
 
 // @desc    view all hotels
 // @route   GET /api/v1/hotels
@@ -85,26 +86,61 @@ exports.getSingleHotel = async (req, res, next) => {
 // @desc    create hotel
 // @route   POST api/v1/hotels
 // @access  admin
-exports.createHotel = async (req,res,next) => {
-    if(req.user.role !== 'admin'){
-        res.status(403).json({
-            success:false,
-            msg:"Not authorized to access this path"
-        })
+exports.createHotel = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized"
+      });
     }
-    try{
-        const hotel = await Hotel.create(req.body)
 
-        res.status(201).json({
-            success:true,
-            data:hotel
-        });
-    }catch (err){
-        res.status(400).json({
-            success:false,
-            msg:`Cannot create hotel : ${err.message}`
-        })
+    const { ownerEmail } = req.body;
+
+
+    if (!ownerEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "ownerEmail is required"
+      });
     }
+
+
+    const user = await User.findOne({ email: ownerEmail });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    
+    if (user.role !== "hotelOwner") {
+      return res.status(400).json({
+        success: false,
+        message: "User is not a hotel owner"
+      });
+    }
+
+
+    const hotel = await Hotel.create({
+      ...req.body,
+      ownerID: user._id
+    });
+
+    res.status(201).json({
+      success: true,
+      data: hotel
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      message: "Cannot create hotel"
+    });
+  }
 };
 
 

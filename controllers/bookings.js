@@ -120,6 +120,30 @@ exports.addBooking = async (req, res) => {
       });
     } 
 
+    if (!checkInDate || !checkOutDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing dates",
+      });
+    }
+    const inDate = new Date(checkInDate);
+    const outDate = new Date(checkOutDate);
+
+    // 4. ✅ Validate BEFORE using in DB
+    if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format",
+      });
+    }
+
+    if (outDate <= inDate) {
+      return res.status(400).json({
+        success: false,
+        message: "checkOutDate must be after checkInDate",
+      });
+    }
+
 
     const hotel = await Hotel.findById(hotelID);
     if (!hotel) {
@@ -135,34 +159,23 @@ exports.addBooking = async (req, res) => {
         message: "Invalid roomID",
       });
     }
+
+    const bookedCount = await Booking.countDocuments({
+      roomID: roomID,
+      checkInDate: { $lt: outDate },
+      checkOutDate: { $gt: inDate }
+    });
+
+    if (bookedCount >= room.amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Room fully booked"
+      });
+    }
+
     // assign user
     if (req.user.role !== "admin") {
       req.body.user = req.user.id;
-    }
-
-    // validate dates
-    if (!checkInDate || !checkOutDate) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide checkInDate and checkOutDate",
-      });
-    }
-
-    const inDate = new Date(checkInDate);
-    const outDate = new Date(checkOutDate);
-
-    if (isNaN(inDate) || isNaN(outDate)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid date format",
-      });
-    }
-
-    if (outDate <= inDate) {
-      return res.status(400).json({
-        success: false,
-        message: "checkOutDate must be after checkInDate",
-      });
     }
 
     const MS_PER_DAY = 1000 * 60 * 60 * 24;

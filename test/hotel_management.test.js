@@ -1,3 +1,4 @@
+process.env.NODE_ENV = 'test';
 require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
@@ -19,6 +20,7 @@ const newRandomHotel = () => ({
   location: "Sukhumvit Road, Bangkok",
 
   ownerID: "69da0c7ff8190a65bcf5db14",
+  ownerEmail : "owner@gmail.com",
 
   tel: `08${Math.floor(10000000 + Math.random()*90000000)}`,
   email: `test${Date.now()}@mail.com`,
@@ -92,6 +94,12 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (hotelId) {
+    await request(app)
+      .delete(`/api/v1/hotels/${hotelId}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+  }
+
   await mongoose.connection.close();
 });
 

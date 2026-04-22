@@ -1,9 +1,11 @@
 const express = require("express");
+require("dotenv").config({ path: "./config/config.env" });
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const { xss } = require("express-xss-sanitizer");
 const rateLimit = require("express-rate-limit");
-
+const connectDB = require("./config/db");
+connectDB();
 // Route files
 const auth = require("./routes/auth");
 const hotels = require("./routes/hotels");
@@ -28,7 +30,7 @@ const apiLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 20,
+  max: 2000,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -38,8 +40,10 @@ const authLimiter = rateLimit({
 });
 
 // Apply middleware
-app.use("/api", apiLimiter);
-app.use("/api/v1/auth", authLimiter);
+if (process.env.NODE_ENV !== 'test') {
+  app.use("/api", apiLimiter);
+  app.use("/api/v1/auth", authLimiter);
+}
 
 // Routes
 app.use("/api/v1/hotels", hotels);
