@@ -80,3 +80,34 @@ exports.compareHotels = async (req, res) => {
         });
     }
 };
+
+// @desc    Get favorite count for all hotels owned by the logged-in hotel owner
+// @route   GET /api/v1/favorites/count
+// @access  Private (hotelOwner only)
+exports.getFavoriteCount = async (req, res) => {
+    try {
+        const hotels = await Hotel.find(
+            { ownerID: req.user.id },
+            { name: 1, favoriteBy: 1, _id: 0 }
+        );
+
+        if (!hotels || hotels.length === 0) {
+            return res.status(404).json({
+                success: false,
+                msg: 'No hotels found for this owner'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            count: hotels.length,
+            data: hotels
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            msg: err.message
+        });
+    }
+};
