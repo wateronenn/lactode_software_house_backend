@@ -3,7 +3,7 @@ const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 
 // @desc    Add favorite hotel
-// @route   POST /api/v1/favorites/:hotelID
+// @route   PUT /api/v1/favorites/:hotelID
 // @access  Private (user)
 exports.addFavorite = async (req, res) => {
     try {
