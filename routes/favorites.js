@@ -3,6 +3,9 @@ const { addFavorite, removeFavorite, removeAllFavorites, getFavorites } = requir
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 
+router.route('/compare')
+    .get(protect , compareHotels);
+
 router.route('/')
     .get(protect, getFavorites)
     .delete(protect, removeFavorites);
