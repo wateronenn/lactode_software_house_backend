@@ -1,5 +1,6 @@
 const Hotel = require('../models/Hotel')
 const User = require('../models/User')
+const Booking = require('../models/Booking')
 
 // @desc    view all hotels
 // @route   GET /api/v1/hotels
@@ -67,62 +68,12 @@ exports.getSingleHotel = async (req, res) => {
       });
     }
 
-    // filter rooms by capacity
-    const rooms = await Room.find({
-      hotelID,
-      people: { $gte: Number(people || 1) }
-    });
+ 
+  
 
-    let inDate = null;
-    let outDate = null;
-
-    // ✅ validate dates (once)
-    if (checkInDate && checkOutDate) {
-      inDate = new Date(checkInDate);
-      outDate = new Date(checkOutDate);
-
-      if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) {
-        return res.status(400).json({
-          success: false,
-          msg: "Invalid date format"
-        });
-      }
-
-      if (outDate <= inDate) {
-        return res.status(400).json({
-          success: false,
-          msg: "checkOutDate must be after checkInDate"
-        });
-      }
-    }
-
-    // ✅ ALWAYS compute availability
-    const results = await Promise.all(
-      rooms.map(async (room) => {
-        let bookedCount = 0;
-
-        if (inDate && outDate) {
-          bookedCount = await Booking.countDocuments({
-            roomID: room._id,
-            checkInDate: { $lt: outDate },
-            checkOutDate: { $gt: inDate },
-          });
-        }
-
-        return {
-          ...room.toObject(),
-          bookedNumber: bookedCount,
-          available: Math.max(0, room.availableNumber - bookedCount)
-        };
-      })
-    );
-
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      data: {
-        ...hotel.toObject(),
-        rooms: results
-      }
+      data: hotel
     });
 
   } catch (err) {
@@ -273,7 +224,7 @@ exports.deleteHotel = async (req, res, next) => {
         // Find all bookings for this hotel
         const bookings = await Booking.find({ hotel: req.params.hotelID });
 
-        if (bookings.length > 0) {
+        if (bookings & bookings.length > 0) {
             // Find the latest checkout date among all bookings
             const latestCheckout = bookings.reduce((latest, booking) => {
                 return booking.checkOutDate > latest ? booking.checkOutDate : latest;
