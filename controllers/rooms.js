@@ -58,11 +58,10 @@ exports.getManyRooms = async (req, res) => {
 };
 
 // @desc    view single rooms
-// @route   GET api/v1/hotels/:hotelID/rooms/:id
+// @route   GET api/v1/hotels/:hotelID/rooms/:roomID
 // @access  Public
 exports.getSingleRoom = async (req, res) => {
     try {
-        const {checkInDate , checkOutDate} = req.query
         const room = await Room.findById(req.params.roomID).populate('hotelID', 'name location');
 
         if (!room) {
@@ -73,11 +72,6 @@ exports.getSingleRoom = async (req, res) => {
         if (room.hotelID._id.toString() !== req.params.hotelID) {
             return res.status(400).json({ success: false, message: 'Room does not belong to this hotel' });
         }
-    
-
-  
-   
-        
         return res.status(200).json({ success: true, data: room });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
