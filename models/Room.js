@@ -108,7 +108,11 @@ const RoomSchema = new mongoose.Schema(
       required: [true, 'Please provide available number'],
       min: [0, 'Available number cannot be negative']
     },
-
+    bookedNumber: {
+      type: Number,
+      default: 0,
+      min: [0, 'Booked number cannot be negative']
+    },
     // Room Status
     status: {
       type: String,
@@ -132,6 +136,8 @@ const RoomSchema = new mongoose.Schema(
     toObject: { virtuals: true }
   }
 );
-
+RoomSchema.virtual('available').get(function() {
+  return this.availableNumber - (this.bookedNumber ?? 0);
+});
 
 module.exports = mongoose.model('Room', RoomSchema);
