@@ -147,9 +147,7 @@ exports.getFavorites = async (req, res) => {
     }
 };
 
-const Hotel = require('../models/Hotel');
-const Room = require('../models/Room');
-const mongoose = require('mongoose');
+
 
 // @desc    Compare two hotels side by side with their rooms
 // @route   GET /api/v1/favorites/compare
