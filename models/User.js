@@ -53,7 +53,11 @@ const UserSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    favoriteHotels: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Hotel'
+    }]
 });
 
 //Encrypt password using bcrypt

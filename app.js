@@ -11,6 +11,7 @@ const auth = require("./routes/auth");
 const hotels = require("./routes/hotels");
 const bookings = require("./routes/bookings");
 const rooms = require("./routes/rooms");
+const favorites = require("./routes/favorites");
 
 const app = express();
 
@@ -48,8 +49,9 @@ if (process.env.NODE_ENV !== 'test') {
 // Routes
 app.use("/api/v1/hotels", hotels);
 app.use("/api/v1/auth", auth);
-app.use("/api/v1/hotels/:hotelId/rooms", rooms);
+app.use("/api/v1/hotels/:hotelID/rooms", rooms);
 app.use("/api/v1/bookings", bookings);
+app.use("/api/v1/favorites", favorites);
 
 // Query parser
 app.set("query parser", "extended");
