@@ -1,6 +1,28 @@
 const User = require('../models/User');
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
+const mongoose = require('mongoose')
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+//AI configuration
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+function extractJSON(text) {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  const jsonString = text.slice(start, end + 1);
+
+  try {
+    return JSON.parse(jsonString);
+  } catch (err) {
+    console.error('Invalid JSON:', err.message);
+    return null;
+  }
+}
 
 const formatFacilities = (facilities) => {
     if (!facilities || facilities.length === 0) return "No facilities listed";
@@ -11,8 +33,7 @@ const buildPrompt = (hotel, avgPrice) => {
     const facilitiesText = formatFacilities(hotel.facilities);
 
     return `
-    You are an assistant that MUST follow rules strictly.
-
+    You are an API. Return ONLY valid JSON. No explanation.
     Hotel:
     Name: ${hotel.name}
     Location: ${hotel.location}
@@ -36,8 +57,28 @@ const buildPrompt = (hotel, avgPrice) => {
     }
     `;
 };
+
+async function generateAIReview(prompt) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    return extractJSON(text) || {
+      bestFor: "Travelers",
+      summary: text
+    };
+
+  } catch (err) {
+    console.error(err);
+    return {
+      bestFor: "Unknown",
+      summary: `AI unavailable ${err.message}`
+    };
+  }
+}
 // @desc    Add favorite hotel
-// @route   PUT /api/v1/favorites/:hotelID
+// @route   POST /api/v1/favorites/:hotelID
 // @access  Private (user)
 exports.addFavorite = async (req, res) => {
     try {
@@ -71,9 +112,13 @@ exports.addFavorite = async (req, res) => {
             $inc: { favoriteBy: 1 }
         });
 
-        res.status(200).json({ 
-            success: true, 
-            message: 'Added to favorites' 
+        const updatedUser = await User.findById(req.user.id);
+
+        res.status(201).json({ 
+        success: true, 
+        message: 'Added to favorites',
+        count: updatedUser.favoriteHotels.length,
+        data: updatedUser.favoriteHotels
         });
     } catch (err) {
         res.status(500).json({ 
@@ -254,20 +299,21 @@ exports.compareHotels = async (req, res) => {
         const avg2 = calcAvg(rooms2);
 
         // ❗ Optional: reject if no valid rooms
-        if (!rooms1.length || !rooms2.length) {
+       /* if (!rooms1.length || !rooms2.length) {
             return res.status(400).json({
                 success: false,
                 msg: 'No rooms available for given number of people'
             });
-        }
+        }*/
 
         // 🧠 Build prompts
         const prompt1 = buildPrompt(h1, avg1);
         const prompt2 = buildPrompt(h2, avg2);
 
-        // 🔌 Replace with real AI later
-        const ai1 = { bestFor: "Travelers", summary: "Nice hotel with good facilities." };
-        const ai2 = { bestFor: "Families", summary: "Comfortable stay with useful amenities." };
+        const [ai1, ai2] = await Promise.all([
+            generateAIReview(prompt1),
+            generateAIReview(prompt2)
+        ]);
 
         // ✅ Response
         res.status(200).json({
@@ -277,13 +323,14 @@ exports.compareHotels = async (req, res) => {
                     ...h1.toObject(),
                     avgPrice: avg1,
                     rooms: rooms1,
-                    ai: ai1
+                    bestFor: ai1?.bestFor || "Unknown",
+                    summary : ai1?.summary || "No summary"
                 },
                 hotel2: {
                     ...h2.toObject(),
                     avgPrice: avg2,
-                    rooms: rooms2,
-                    ai: ai2
+                    bestFor: ai2?.bestFor || "Unknown",
+                    summary : ai2?.summary || "No summary"
                 }
             }
         });
@@ -295,3 +342,5 @@ exports.compareHotels = async (req, res) => {
         });
     }
 };
+
+module.exports.generateAIReview = generateAIReview;

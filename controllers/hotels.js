@@ -1,6 +1,7 @@
 const Hotel = require('../models/Hotel')
 const User = require('../models/User')
 const Booking = require('../models/Booking')
+const Room = require('../models/Room')
 
 // @desc    view all hotels
 // @route   GET /api/v1/hotels

@@ -8,10 +8,10 @@ router.route('/compare')
 
 router.route('/')
     .get(protect, getFavorites)
-    .delete(protect, removeFavorite);
+    .delete(protect, removeAllFavorites);
 
 router.route('/:hotelID')
-    .put(protect, addFavorite)
+    .post(protect, addFavorite)
     .delete(protect, removeFavorite);
 
 module.exports = router;
