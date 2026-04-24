@@ -2,8 +2,42 @@ const User = require('../models/User');
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 
+const formatFacilities = (facilities) => {
+    if (!facilities || facilities.length === 0) return "No facilities listed";
+    return facilities.join(", ");
+};
+
+const buildPrompt = (hotel, avgPrice) => {
+    const facilitiesText = formatFacilities(hotel.facilities);
+
+    return `
+    You are an assistant that MUST follow rules strictly.
+
+    Hotel:
+    Name: ${hotel.name}
+    Location: ${hotel.location}
+    Facilities: ${facilitiesText}
+    Description: ${hotel.description}
+    Starting price: ${avgPrice}
+
+    Tasks:
+    1. Who is this hotel best for (MAX 10 words)
+    2. Short summary including location and facilities (MAX 30 words)
+
+    Rules:
+    - MUST consider facilities in reasoning
+    - Do NOT exceed word limits
+    - No extra text
+
+    Return EXACTLY:
+    {
+    "bestFor": "...",
+    "summary": "..."
+    }
+    `;
+};
 // @desc    Add favorite hotel
-// @route   PUT /api/v1/favorites/:hotelID
+// @route   POST /api/v1/favorites/:hotelID
 // @access  Private (user)
 exports.addFavorite = async (req, res) => {
     try {
@@ -154,17 +188,16 @@ exports.getFavorites = async (req, res) => {
 // @access  Private
 exports.compareHotels = async (req, res) => {
     try {
-        const { hotel1, hotel2 } = req.query;
+        const { hotel1, hotel2, province, people } = req.query;
 
-        // Validate both params exist
+        // ✅ Validate IDs
         if (!hotel1 || !hotel2) {
             return res.status(400).json({
                 success: false,
-                msg: 'Please provide both hotel1 and hotel2 query parameters'
+                msg: 'Please provide hotel1 and hotel2'
             });
         }
 
-        // Validate both are valid MongoDB ObjectIDs
         if (!mongoose.Types.ObjectId.isValid(hotel1) || !mongoose.Types.ObjectId.isValid(hotel2)) {
             return res.status(400).json({
                 success: false,
@@ -172,50 +205,85 @@ exports.compareHotels = async (req, res) => {
             });
         }
 
-        // Prevent comparing a hotel with itself
         if (hotel1 === hotel2) {
             return res.status(400).json({
                 success: false,
-                msg: 'Cannot compare a hotel with itself'
+                msg: 'Cannot compare the same hotel'
             });
         }
 
-        // Fetch both hotels concurrently
-        const [hotelOne, hotelTwo] = await Promise.all([
+        // ✅ Fetch hotels
+        const [h1, h2] = await Promise.all([
             Hotel.findById(hotel1),
             Hotel.findById(hotel2)
         ]);
 
-        if (!hotelOne) {
+        if (!h1 || !h2) {
             return res.status(404).json({
                 success: false,
-                msg: `Hotel not found: ${hotel1}`
+                msg: 'One or both hotels not found'
             });
         }
 
-        if (!hotelTwo) {
-            return res.status(404).json({
-                success: false,
-                msg: `Hotel not found: ${hotel2}`
-            });
+        // ✅ Filter by province (if provided)
+        if (province) {
+            if (h1.location !== province || h2.location !== province) {
+                return res.status(400).json({
+                    success: false,
+                    msg: 'Hotels do not match selected province'
+                });
+            }
         }
 
-        // Fetch rooms for both hotels concurrently, sorted by price ascending
-        const [roomsOne, roomsTwo] = await Promise.all([
-            Room.find({ hotelID: hotel1 }).sort({ price: 1 }),
-            Room.find({ hotelID: hotel2 }).sort({ price: 1 })
+        // ✅ Fetch rooms with capacity filter
+        const capacityFilter = people ? { capacity: { $gte: Number(people) } } : {};
+
+        const [rooms1, rooms2] = await Promise.all([
+            Room.find({ hotelID: hotel1, ...capacityFilter }),
+            Room.find({ hotelID: hotel2, ...capacityFilter })
         ]);
 
+        // ✅ Calculate average price
+        const calcAvg = (rooms) => {
+            if (!rooms.length) return null;
+            const total = rooms.reduce((sum, r) => sum + r.price, 0);
+            return Math.round(total / rooms.length);
+        };
+
+        const avg1 = calcAvg(rooms1);
+        const avg2 = calcAvg(rooms2);
+
+        // ❗ Optional: reject if no valid rooms
+        if (!rooms1.length || !rooms2.length) {
+            return res.status(400).json({
+                success: false,
+                msg: 'No rooms available for given number of people'
+            });
+        }
+
+        // 🧠 Build prompts
+        const prompt1 = buildPrompt(h1, avg1);
+        const prompt2 = buildPrompt(h2, avg2);
+
+        // 🔌 Replace with real AI later
+        const ai1 = { bestFor: "Travelers", summary: "Nice hotel with good facilities." };
+        const ai2 = { bestFor: "Families", summary: "Comfortable stay with useful amenities." };
+
+        // ✅ Response
         res.status(200).json({
             success: true,
             data: {
                 hotel1: {
-                    ...hotelOne.toObject(),
-                    rooms: roomsOne
+                    ...h1.toObject(),
+                    avgPrice: avg1,
+                    rooms: rooms1,
+                    ai: ai1
                 },
                 hotel2: {
-                    ...hotelTwo.toObject(),
-                    rooms: roomsTwo
+                    ...h2.toObject(),
+                    avgPrice: avg2,
+                    rooms: rooms2,
+                    ai: ai2
                 }
             }
         });

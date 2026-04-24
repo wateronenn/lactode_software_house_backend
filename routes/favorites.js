@@ -1,5 +1,5 @@
 const express = require('express');
-const { addFavorite, removeFavorite, removeAllFavorites, getFavorites } = require('../controllers/favorites');
+const { addFavorite, removeFavorite, removeAllFavorites, getFavorites , compareHotels } = require('../controllers/favorites');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 
