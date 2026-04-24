@@ -11,7 +11,7 @@ router.route('/')
     .delete(protect, removeFavorite);
 
 router.route('/:hotelID')
-    .put(protect, addFavorite)
+    .post(protect, addFavorite)
     .delete(protect, removeFavorite);
 
 module.exports = router;
