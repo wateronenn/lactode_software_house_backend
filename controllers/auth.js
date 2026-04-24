@@ -33,6 +33,7 @@ exports.getAllUsers = async(req,res,next) => {
 exports.register = async (req, res, next) => {
   try {
     const { username, email,tel,firstname, lastname, password, role  } = req.body;
+    const favoriteHotel = []
 
     const existingTel = await User.findOne({ tel: req.body.tel });
     if (existingTel) {
@@ -49,7 +50,8 @@ exports.register = async (req, res, next) => {
       email,
       password,
       role,
-      tel
+      tel,
+      favoriteHotel
     });
 
     sendTokenResponse(user, 201, res);
