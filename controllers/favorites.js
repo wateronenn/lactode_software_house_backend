@@ -1,41 +1,53 @@
 const User = require('../models/User');
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
+const mongoose = require('mongoose')
+const {generateAIReview} = require('./aiService')
 
 const formatFacilities = (facilities) => {
     if (!facilities || facilities.length === 0) return "No facilities listed";
     return facilities.join(", ");
 };
 
-const buildPrompt = (hotel, avgPrice) => {
-    const facilitiesText = formatFacilities(hotel.facilities);
-
+const buildPrompt = (hotel1, avgPrice1,hotel2,avgPrice2) => {
+    const facilitiesText1 = formatFacilities(hotel1.facilities);
+    const facilitiesText2 = formatFacilities(hotel2.facilities);
     return `
-    You are an assistant that MUST follow rules strictly.
+    You are an API. Return ONLY valid JSON FOR THESE 2 HOTELS. No explanation.
+    Hotel 1:
+    Name: ${hotel1.name}
+    Location: ${hotel1.location}
+    Facilities: ${facilitiesText1}
+    Description: ${hotel1.description}
+    Starting price: ${avgPrice1}
 
-    Hotel:
-    Name: ${hotel.name}
-    Location: ${hotel.location}
-    Facilities: ${facilitiesText}
-    Description: ${hotel.description}
-    Starting price: ${avgPrice}
+    Hotel 2 :
+    Name: ${hotel2.name}
+    Location: ${hotel2.location}
+    Facilities: ${facilitiesText2}
+    Description: ${hotel2.description}
+    Starting price: ${avgPrice2}
 
     Tasks:
     1. Who is this hotel best for (MAX 10 words)
-    2. Short summary including location and facilities (MAX 30 words)
+    2. Short summary including location and facilities comparing each other (MAX 30 words)
 
     Rules:
     - MUST consider facilities in reasoning
     - Do NOT exceed word limits
     - No extra text
 
-    Return EXACTLY:
+    Return EXACTLY JSON:
     {
-    "bestFor": "...",
-    "summary": "..."
+    "hotel1_bestFor": "...",
+    "hotel1_summary": "...",
+    "hotel2_bestFor : "...",
+    "hotel2_summary" : "..."
     }
     `;
 };
+
+
 // @desc    Add favorite hotel
 // @route   POST /api/v1/favorites/:hotelID
 // @access  Private (user)
@@ -71,9 +83,13 @@ exports.addFavorite = async (req, res) => {
             $inc: { favoriteBy: 1 }
         });
 
-        res.status(200).json({ 
-            success: true, 
-            message: 'Added to favorites' 
+        const updatedUser = await User.findById(req.user.id);
+
+        res.status(201).json({ 
+        success: true, 
+        message: 'Added to favorites',
+        count: updatedUser.favoriteHotels.length,
+        data: updatedUser.favoriteHotels
         });
     } catch (err) {
         res.status(500).json({ 
@@ -253,22 +269,10 @@ exports.compareHotels = async (req, res) => {
         const avg1 = calcAvg(rooms1);
         const avg2 = calcAvg(rooms2);
 
-        // ❗ Optional: reject if no valid rooms
-        if (!rooms1.length || !rooms2.length) {
-            return res.status(400).json({
-                success: false,
-                msg: 'No rooms available for given number of people'
-            });
-        }
-
-        // 🧠 Build prompts
-        const prompt1 = buildPrompt(h1, avg1);
-        const prompt2 = buildPrompt(h2, avg2);
-
-        // 🔌 Replace with real AI later
-        const ai1 = { bestFor: "Travelers", summary: "Nice hotel with good facilities." };
-        const ai2 = { bestFor: "Families", summary: "Comfortable stay with useful amenities." };
-
+        const prompt = buildPrompt(h1, avg1,h2,avg2);
+        console.log(prompt)
+        const ai = await generateAIReview(prompt);
+        console.log(ai)
         // ✅ Response
         res.status(200).json({
             success: true,
@@ -277,13 +281,14 @@ exports.compareHotels = async (req, res) => {
                     ...h1.toObject(),
                     avgPrice: avg1,
                     rooms: rooms1,
-                    ai: ai1
+                    bestFor: ai?.hotel1_bestFor || "Unknown",
+                    summary : ai?.hotel1_summary || "No summary"
                 },
                 hotel2: {
                     ...h2.toObject(),
                     avgPrice: avg2,
-                    rooms: rooms2,
-                    ai: ai2
+                    bestFor: ai?.hotel2_bestFor || "Unknown",
+                    summary : ai?.hotel2_summary || "No summary"
                 }
             }
         });
@@ -295,3 +300,5 @@ exports.compareHotels = async (req, res) => {
         });
     }
 };
+
+module.exports.generateAIReview = generateAIReview;
