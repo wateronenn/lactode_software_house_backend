@@ -12,13 +12,9 @@ let adminToken;
 let hotelID1 = "69e508b860a9cab69f2b22b9"; // Chiang Mai Heritage Resort
 let hotelID2 = "69e508b860a9cab69f2b22bc"; //Royal Thai Palace Hotel
 let hotelID3 = "69e508b860a9cab69f2b22c4"; // Temple View Hotel
-
+let invalidID = "invalid-id";
 beforeAll( async ()=>{
     await mongoose.connect(process.env.MONGO_URL);
-
-    await request(app)
-    .delete('/api/v1/favorites')
-    .set('Authorization', `Bearer ${userToken}`);
 
     const adminRes = await request(app)
     .post('/api/v1/auth/login')
@@ -36,6 +32,9 @@ beforeAll( async ()=>{
     userToken = userRes.body.token;
     userID = userRes.body.user._id;
 
+    await request(app)
+    .delete('/api/v1/favorites')
+    .set('Authorization', `Bearer ${userToken}`);
 })
 
 afterAll(async () => {
@@ -176,3 +175,44 @@ describe('DELETE /favorites/:hotelID', () => {
 });
 
 
+describe('GET /favorites/compare', () => {
+
+  it('should compare two hotels successfully', async () => {
+     await request(app)
+    .post(`/api/v1/favorites/${hotelID1}`)
+    .set('Authorization', `Bearer ${userToken}`);
+
+  await request(app)
+    .post(`/api/v1/favorites/${hotelID2}`)
+    .set('Authorization', `Bearer ${userToken}`);
+
+  await request(app)
+    .post(`/api/v1/favorites/${hotelID3}`)
+    .set('Authorization', `Bearer ${userToken}`);
+
+    const res = await request(app)
+      .get(`/api/v1/favorites/compare`)
+      .query({
+        hotel1: hotelID1,
+        hotel2: hotelID2
+      })
+      .set('Authorization', `Bearer ${userToken}`);
+
+    console.log(res.body);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    expect(res.body.data).toHaveProperty('hotel1');
+    expect(res.body.data).toHaveProperty('hotel2');
+
+    expect(res.body.data.hotel1).toHaveProperty('avgPrice');
+    expect(res.body.data.hotel1).toHaveProperty('bestFor');
+    expect(res.body.data.hotel1).toHaveProperty('summary');
+
+    expect(res.body.data.hotel2).toHaveProperty('avgPrice');
+    expect(res.body.data.hotel2).toHaveProperty('bestFor');
+    expect(res.body.data.hotel2).toHaveProperty('summary');
+  });
+
+});

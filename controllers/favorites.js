@@ -2,27 +2,7 @@ const User = require('../models/User');
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 const mongoose = require('mongoose')
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-//AI configuration
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-function extractJSON(text) {
-  const start = text.indexOf('{');
-  const end = text.lastIndexOf('}');
-
-  if (start === -1 || end === -1 || end <= start) {
-    return null;
-  }
-
-  const jsonString = text.slice(start, end + 1);
-
-  try {
-    return JSON.parse(jsonString);
-  } catch (err) {
-    console.error('Invalid JSON:', err.message);
-    return null;
-  }
-}
+const {generateAIReview} = require('./aiService')
 
 const formatFacilities = (facilities) => {
     if (!facilities || facilities.length === 0) return "No facilities listed";
@@ -58,25 +38,7 @@ const buildPrompt = (hotel, avgPrice) => {
     `;
 };
 
-async function generateAIReview(prompt) {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
 
-    return extractJSON(text) || {
-      bestFor: "Travelers",
-      summary: text
-    };
-
-  } catch (err) {
-    console.error(err);
-    return {
-      bestFor: "Unknown",
-      summary: `AI unavailable ${err.message}`
-    };
-  }
-}
 // @desc    Add favorite hotel
 // @route   POST /api/v1/favorites/:hotelID
 // @access  Private (user)
@@ -298,23 +260,12 @@ exports.compareHotels = async (req, res) => {
         const avg1 = calcAvg(rooms1);
         const avg2 = calcAvg(rooms2);
 
-        // ❗ Optional: reject if no valid rooms
-       /* if (!rooms1.length || !rooms2.length) {
-            return res.status(400).json({
-                success: false,
-                msg: 'No rooms available for given number of people'
-            });
-        }*/
-
         // 🧠 Build prompts
         const prompt1 = buildPrompt(h1, avg1);
         const prompt2 = buildPrompt(h2, avg2);
 
-        const [ai1, ai2] = await Promise.all([
-            generateAIReview(prompt1),
-            generateAIReview(prompt2)
-        ]);
-
+    const ai1 = await generateAIReview(prompt1);
+    const ai2 = await generateAIReview(prompt2);
         // ✅ Response
         res.status(200).json({
             success: true,
