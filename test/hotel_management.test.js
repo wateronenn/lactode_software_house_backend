@@ -172,7 +172,6 @@ describe('Hotel API (Integration Advanced)', () => {
     const res = await request(app)
       .get(`/api/v1/hotels/${hotelId}`)
       .set('Authorization', `Bearer ${userToken}`);
-    console.log(res.body)
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toHaveProperty('_id', hotelId);
   });
@@ -266,7 +265,6 @@ describe('Hotel API (Integration Advanced)', () => {
     const res = await request(app)
       .delete(`/api/v1/hotels/${hotelId}`)
       .set('Authorization', `Bearer ${adminToken}`);
-    console.log(res.body)
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data).toEqual({});

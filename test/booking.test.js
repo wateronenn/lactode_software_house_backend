@@ -68,7 +68,6 @@ beforeAll(async () => {
   const adminRes = await request(app)
     .post('/api/v1/auth/login')
     .send({ identifier: 'admin@gmail.com', password: '123456' });
-  console.log(`admin token : ${adminRes.body.token}` )
   adminToken = adminRes.body.token;
 
   const ownerRes = await request(app)
@@ -85,7 +84,6 @@ beforeAll(async () => {
     .post('/api/v1/auth/login')
     .send({ identifier: 'user@gmail.com', password: '123456' });
   userToken = userRes.body.token;
-  console.log(`Status : ${userRes.status} , body : ${userRes.body}, token : ${userRes.body.token}`)
   userID = userRes.body.user._id;
 
   const userRes2 = await request(app)
@@ -99,13 +97,8 @@ beforeAll(async () => {
     .post('/api/v1/hotels')
     .set('Authorization', `Bearer ${adminToken}`)
     .send(newHotel());
-
-  console.log("STATUS:", hotelRes.statusCode);
-  console.log("BODY:", hotelRes.body); 
   
   hotelID = hotelRes.body.data._id;
-  console.log("hotelID:", hotelID); 
-
 
   // 🛏️ create room
   const roomRes = await request(app)
@@ -113,8 +106,6 @@ beforeAll(async () => {
     .set('Authorization', `Bearer ${ownerToken}`)
     .send(newRoom(hotelID));
 
-    console.log(roomRes.statusCode);
-    console.log(roomRes.body);
   roomID = roomRes.body.data._id;
 });
 
@@ -164,7 +155,6 @@ describe('Booking API (Integration)', () => {
     bookingID = res.body.data._id;
 
     expect(res.body.user._id).toBe(userID);
-    console.log("BODY:", res.body);
   });
 
   // ===================
