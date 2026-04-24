@@ -43,7 +43,7 @@ const HotelSchema = new mongoose.Schema(
     required: [true, 'Please provide phone number'],
     unique: true,
     trim: true,
-    match: [/^[0-9\-\+\(\)\s]+$/, 'Please provide a valid phone number']
+    match: [/^(\d{10}|\d{9})$/, 'Please provide 9 or 10 digit phone number']
     },
     email: {
     type: String,

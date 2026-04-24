@@ -268,7 +268,6 @@ describe('Room API (Integration)', () => {
       .post(`/api/v1/hotels/${hotelID}/rooms`)
       .set('Authorization', `Bearer ${userToken}`)
       .send(newRoom(hotelID));
-    console.log("userToken:", userToken);
     expect(res.statusCode).toBe(403);
   });
 
