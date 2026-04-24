@@ -9,31 +9,40 @@ const formatFacilities = (facilities) => {
     return facilities.join(", ");
 };
 
-const buildPrompt = (hotel, avgPrice) => {
-    const facilitiesText = formatFacilities(hotel.facilities);
-
+const buildPrompt = (hotel1, avgPrice1,hotel2,avgPrice2) => {
+    const facilitiesText1 = formatFacilities(hotel1.facilities);
+    const facilitiesText2 = formatFacilities(hotel2.facilities);
     return `
-    You are an API. Return ONLY valid JSON. No explanation.
-    Hotel:
-    Name: ${hotel.name}
-    Location: ${hotel.location}
-    Facilities: ${facilitiesText}
-    Description: ${hotel.description}
-    Starting price: ${avgPrice}
+    You are an API. Return ONLY valid JSON FOR THESE 2 HOTELS. No explanation.
+    Hotel 1:
+    Name: ${hotel1.name}
+    Location: ${hotel1.location}
+    Facilities: ${facilitiesText1}
+    Description: ${hotel1.description}
+    Starting price: ${avgPrice1}
+
+    Hotel 2 :
+    Name: ${hotel2.name}
+    Location: ${hotel2.location}
+    Facilities: ${facilitiesText2}
+    Description: ${hotel2.description}
+    Starting price: ${avgPrice2}
 
     Tasks:
     1. Who is this hotel best for (MAX 10 words)
-    2. Short summary including location and facilities (MAX 30 words)
+    2. Short summary including location and facilities comparing each other (MAX 30 words)
 
     Rules:
     - MUST consider facilities in reasoning
     - Do NOT exceed word limits
     - No extra text
 
-    Return EXACTLY:
+    Return EXACTLY JSON:
     {
-    "bestFor": "...",
-    "summary": "..."
+    "hotel1_bestFor": "...",
+    "hotel1_summary": "...",
+    "hotel2_bestFor : "...",
+    "hotel2_summary" : "..."
     }
     `;
 };
@@ -260,12 +269,10 @@ exports.compareHotels = async (req, res) => {
         const avg1 = calcAvg(rooms1);
         const avg2 = calcAvg(rooms2);
 
-        // 🧠 Build prompts
-        const prompt1 = buildPrompt(h1, avg1);
-        const prompt2 = buildPrompt(h2, avg2);
-
-    const ai1 = await generateAIReview(prompt1);
-    const ai2 = await generateAIReview(prompt2);
+        const prompt = buildPrompt(h1, avg1,h2,avg2);
+        console.log(prompt)
+        const ai = await generateAIReview(prompt);
+        console.log(ai)
         // ✅ Response
         res.status(200).json({
             success: true,
@@ -274,14 +281,14 @@ exports.compareHotels = async (req, res) => {
                     ...h1.toObject(),
                     avgPrice: avg1,
                     rooms: rooms1,
-                    bestFor: ai1?.bestFor || "Unknown",
-                    summary : ai1?.summary || "No summary"
+                    bestFor: ai?.hotel1_bestFor || "Unknown",
+                    summary : ai?.hotel1_summary || "No summary"
                 },
                 hotel2: {
                     ...h2.toObject(),
                     avgPrice: avg2,
-                    bestFor: ai2?.bestFor || "Unknown",
-                    summary : ai2?.summary || "No summary"
+                    bestFor: ai?.hotel2_bestFor || "Unknown",
+                    summary : ai?.hotel2_summary || "No summary"
                 }
             }
         });
