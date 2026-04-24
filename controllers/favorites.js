@@ -37,7 +37,7 @@ const buildPrompt = (hotel, avgPrice) => {
     `;
 };
 // @desc    Add favorite hotel
-// @route   PUT /api/v1/favorites/:hotelID
+// @route   POST /api/v1/favorites/:hotelID
 // @access  Private (user)
 exports.addFavorite = async (req, res) => {
     try {
