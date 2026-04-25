@@ -258,13 +258,6 @@ exports.updateHotel = async (req, res, next) => {
 // @route   DELETE api/v1/hotels/:hotelID
 // @access  admin
 exports.deleteHotel = async (req, res) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({
-            success: false,
-            msg: "Not authorized to access this path"
-        });
-    }
-
     try {
         const { hotelID } = req.params;
 
