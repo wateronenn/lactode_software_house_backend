@@ -243,7 +243,7 @@ exports.compareHotels = async (req, res) => {
 
         // ✅ Filter by province (if provided)
         if (province) {
-            if (h1.location !== province || h2.location !== province) {
+            if (h1.province !== province || h2.province !== province) {
                 return res.status(400).json({
                     success: false,
                     msg: 'Hotels do not match selected province'
