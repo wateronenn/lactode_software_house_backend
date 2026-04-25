@@ -173,7 +173,7 @@ const roomRouter = require('./rooms')
  * @swagger
  * /api/v1/hotels/{hotelID}:
  *   get:
- *     summary: Get single hotel
+ *     summary: Get single hotel with rooms and availability
  *     tags: [Hotels]
  *     parameters:
  *       - in: path
@@ -181,6 +181,31 @@ const roomRouter = require('./rooms')
  *         required: true
  *         schema:
  *           type: string
+ *         description: MongoDB ObjectID of the hotel
+ *       - in: query
+ *         name: checkInDate
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-06-01"
+ *         description: Check-in date to calculate room availability
+ *       - in: query
+ *         name: checkOutDate
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-06-05"
+ *         description: Check-out date to calculate room availability (must be after checkInDate)
+ *       - in: query
+ *         name: people
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           example: 2
+ *         description: Minimum room capacity required (defaults to 1 if not provided)
  *     responses:
  *       200:
  *         description: Success
@@ -191,12 +216,108 @@ const roomRouter = require('./rooms')
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/Hotel'
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     location:
+ *                       type: string
+ *                     province:
+ *                       type: string
+ *                     district:
+ *                       type: string
+ *                     region:
+ *                       type: string
+ *                     postalcode:
+ *                       type: string
+ *                     tel:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     facilities:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [available, occupied, maintenance, reserved]
+ *                     favoriteBy:
+ *                       type: integer
+ *                     bookedTimes:
+ *                       type: integer
+ *                     pictures:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     rooms:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           roomType:
+ *                             type: string
+ *                             enum: [single, double, twin, suite, deluxe, family, studio]
+ *                           bedType:
+ *                             type: string
+ *                             enum: [single, double, queen, king, twin]
+ *                           bed:
+ *                             type: integer
+ *                           price:
+ *                             type: number
+ *                           description:
+ *                             type: string
+ *                           facilities:
+ *                             type: array
+ *                             items:
+ *                               type: string
+ *                           availableNumber:
+ *                             type: integer
+ *                           bookedNumber:
+ *                             type: integer
+ *                             description: Number of bookings overlapping the requested dates
+ *                           available:
+ *                             type: integer
+ *                             description: availableNumber minus bookedNumber (actual available rooms)
+ *                           status:
+ *                             type: string
+ *                             enum: [available, occupied, maintenance, reserved]
+ *                           people:
+ *                             type: integer
+ *                             description: Max occupancy per room
  *       400:
- *         description: Invalid hotel ID format
+ *         description: Invalid hotel ID format / invalid date format / checkOutDate before checkInDate
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 msg:
+ *                   type: string
+ *                   example: Invalid hotel ID format
  *       404:
  *         description: Hotel not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 msg:
+ *                   type: string
+ *                   example: Hotel not found
  *       500:
  *         description: Internal server error
  *   put:
@@ -253,11 +374,24 @@ const roomRouter = require('./rooms')
  *       200:
  *         description: Deleted
  *       400:
- *         description: Hotel not found
+ *         description: Cannot delete hotel with active bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 msg:
+ *                   type: string
+ *                   example: "Cannot delete hotel: active bookings exist. You can delete this hotel after 2026-05-05."
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
+ *       404:
+ *         description: Hotel not found
  *       500:
  *         description: Internal server error
  */
