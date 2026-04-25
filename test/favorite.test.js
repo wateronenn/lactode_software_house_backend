@@ -9,7 +9,7 @@ let userToken;
 let ownerToken;
 let adminToken;
 
-let hotelID1 = "69e508b860a9cab69f2b22b9"; // Chiang Mai Heritage Resort
+let hotelID1 = "69e508b860a9cab69f2b22bd"; // Marina Bay resort
 let hotelID2 = "69e508b860a9cab69f2b22bc"; //Royal Thai Palace Hotel
 let hotelID3 = "69e508b860a9cab69f2b22c4"; // Temple View Hotel
 let invalidID = "invalid-id";
