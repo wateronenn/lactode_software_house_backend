@@ -43,18 +43,25 @@ const { protect, authorize } = require('../middleware/auth');
  *             type: string
  *         availableNumber:
  *           type: integer
+ *         bookedNumber:
+ *           type: integer
+ *           description: Number of bookings overlapping the requested dates
+ *         available:
+ *           type: integer
+ *           description: availableNumber minus bookedNumber (actual available rooms)
  *         status:
  *           type: string
  *           enum: [available, occupied, maintenance, reserved]
  *         people:
  *           type: integer
+ *           description: Max occupancy per room
  */
 
 /**
  * @swagger
  * /api/v1/hotels/{hotelID}/rooms:
  *   get:
- *     summary: Get all rooms in a hotel
+ *     summary: Get all rooms in a hotel with optional availability filter
  *     tags: [Rooms]
  *     parameters:
  *       - in: path
@@ -62,11 +69,61 @@ const { protect, authorize } = require('../middleware/auth');
  *         required: true
  *         schema:
  *           type: string
+ *         description: MongoDB ObjectID of the hotel
+ *       - in: query
+ *         name: checkInDate
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-06-01"
+ *         description: Check-in date to calculate room availability
+ *       - in: query
+ *         name: checkOutDate
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-06-05"
+ *         description: Check-out date to calculate room availability (must be after checkInDate)
+ *       - in: query
+ *         name: people
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           example: 2
+ *         description: Minimum room capacity required
  *     responses:
  *       200:
  *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Room'
+ *       400:
+ *         description: Invalid date format or checkOutDate before checkInDate
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 msg:
+ *                   type: string
+ *                   example: Invalid date format
  *       500:
- *         description: Server error
+ *         description: Internal server error
  *   post:
  *     summary: Create a room (Admin / Hotel Owner)
  *     tags: [Rooms]
@@ -87,10 +144,26 @@ const { protect, authorize } = require('../middleware/auth');
  *     responses:
  *       201:
  *         description: Room created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Room'
+ *       400:
+ *         description: Validation error
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden - not owner of this hotel
+ *       404:
+ *         description: Hotel not found
+ *       500:
+ *         description: Internal server error
  */
 
 /**
@@ -113,8 +186,22 @@ const { protect, authorize } = require('../middleware/auth');
  *     responses:
  *       200:
  *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Room'
+ *       400:
+ *         description: Room does not belong to this hotel
  *       404:
  *         description: Room not found
+ *       500:
+ *         description: Internal server error
  *
  *   put:
  *     summary: Update a room (Admin / Hotel Owner)
@@ -141,10 +228,26 @@ const { protect, authorize } = require('../middleware/auth');
  *     responses:
  *       200:
  *         description: Updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Room'
+ *       400:
+ *         description: Room does not belong to this hotel or validation error
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden - not owner of this hotel
+ *       404:
+ *         description: Room not found
+ *       500:
+ *         description: Internal server error
  *
  *   delete:
  *     summary: Delete a room (Admin / Hotel Owner)
@@ -165,12 +268,38 @@ const { protect, authorize } = require('../middleware/auth');
  *     responses:
  *       200:
  *         description: Deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   example: {}
+ *       400:
+ *         description: Active bookings exist - cannot delete yet
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Cannot delete room: active bookings exist. You can delete after 2025-06-05"
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden
+ *         description: Forbidden - not owner of this hotel
  *       404:
- *         description: Not found
+ *         description: Room or hotel not found
+ *       500:
+ *         description: Internal server error
  */
 
 const router = express.Router({ mergeParams: true });
@@ -180,7 +309,7 @@ router.route('/')
     .post(protect, authorize('hotelOwner','admin'), createRoom)
 
 router.route('/:roomID')
-    .get(getSingleRoom)                                          
+    .get(getSingleRoom)
     .put(protect, authorize('hotelOwner','admin'), updateRoom)
     .delete(protect, authorize('hotelOwner','admin'), deleteRoom)
 
