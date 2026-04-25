@@ -257,7 +257,7 @@ exports.updateHotel = async (req, res, next) => {
 // @desc    delete hotel
 // @route   DELETE api/v1/hotels/:hotelID
 // @access  admin
-exports.deleteHotel = async (req, res, next) => {
+exports.deleteHotel = async (req, res) => {
     if (req.user.role !== 'admin') {
         return res.status(403).json({
             success: false,
@@ -266,32 +266,44 @@ exports.deleteHotel = async (req, res, next) => {
     }
 
     try {
-        const hotel = await Hotel.findById(req.params.hotelID);
+        const { hotelID } = req.params;
+
+        const hotel = await Hotel.findById(hotelID);
 
         if (!hotel) {
-            return res.status(404).json({ success: false, msg: "Hotel not found" });
-        }
-
-        // Find all bookings for this hotel
-        const bookings = await Booking.find({ hotel: req.params.hotelID });
-
-        if (bookings & bookings.length > 0) {
-            // Find the latest checkout date among all bookings
-            const latestCheckout = bookings.reduce((latest, booking) => {
-                return booking.checkOutDate > latest ? booking.checkOutDate : latest;
-            }, new Date(0));
-
-            const formattedDate = latestCheckout.toISOString().split('T')[0];
-
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
-                msg: `Cannot delete hotel: active bookings exist. You can delete this hotel after ${formattedDate}.`
+                msg: "Hotel not found"
             });
         }
 
-        await Hotel.findByIdAndDelete(req.params.hotelID);
+        // ✅ Find latest FUTURE booking only (fast)
+        const latestBooking = await Booking.findOne({
+            hotelID,
+            checkOutDate: { $gt: new Date() }
+        }).sort({ checkOutDate: -1 });
 
-        res.status(200).json({ success: true, data: {} });
+        if (latestBooking) {
+            const formattedDate = latestBooking.checkOutDate
+                .toISOString()
+                .split('T')[0];
+
+            return res.status(400).json({
+                success: false,
+                msg: `Cannot delete hotel: active bookings exist. You can delete after ${formattedDate}.`
+            });
+        }
+
+        // 🧹 Optional cleanup
+        await Room.deleteMany({ hotelID });
+        await Booking.deleteMany({ hotelID }); // optional depending on design
+
+        await Hotel.findByIdAndDelete(hotelID);
+
+        res.status(200).json({
+            success: true,
+            data: {}
+        });
 
     } catch (err) {
         res.status(500).json({

@@ -242,7 +242,7 @@ exports.deleteRoom = async (req, res) => {
             roomID: req.params.roomID,
             checkOutDate: { $gt: new Date() }
         });
-
+        console.log(bookings)
         if (bookings.length > 0) {
             const latestCheckout = bookings.reduce((latest, booking) => {
                 return booking.checkOutDate > latest ? booking.checkOutDate : latest;
