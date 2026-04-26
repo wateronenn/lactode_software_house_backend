@@ -228,6 +228,12 @@ exports.updateHotel = async (req, res, next) => {
                 msg: "Not authorized to access this path"
             });
         }
+        if(req.user.role === 'user'){
+          return res.status(403).json({
+                success: false,
+                msg: "Not authorized to access this path"
+            });
+        }
 
         const updatedHotel = await Hotel.findByIdAndUpdate(
             req.params.hotelID,

@@ -362,5 +362,27 @@ describe('Authentication Tests', () => {
         expect(res.statusCode).toEqual(200);
     });
 
+    test('get all users', async () => { 
+        const res = await request(app)
+            .get('/api/v1/auth')    
+            .set('Authorization', `Bearer ${adminToken}`)
+    
+        expect(res.statusCode).toEqual(200);
+    });
+    test('get all unauthorized', async () => { 
+        const res = await request(app)
+            .get('/api/v1/auth')    
+            .set('Authorization', `Bearer ${userToken}`)
+    
+        expect(res.statusCode).toEqual(403);
+    });
+
+    test('get all unauthorized', async () => { 
+        const res = await request(app)
+            .get('/api/v1/auth')    
+            .set('Authorization', `Bearer ${userToken}`)
+    
+        expect(res.statusCode).toEqual(403);
+    });
  
 });
