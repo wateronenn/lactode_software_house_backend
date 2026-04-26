@@ -15,6 +15,8 @@ let hotelID;
 let roomId;
 let hotelID2;
 let roomId2;
+let userID;
+let ownerID;
 
 let createdRoomIds = [];
 
@@ -97,6 +99,8 @@ beforeAll(async () => {
     .post('/api/v1/auth/login')
     .send({ identifier: 'user@gmail.com', password: '123456' });
   userToken = userRes.body.token;
+  userID = userRes.body._id;
+  
 
   //create hotel
   const hotelRes = await request(app)
@@ -433,8 +437,15 @@ describe('Room API (Integration)', () => {
     expect(res.statusCode).toBe(403);
   });
 
-  test('DELETE room (owner)', async () => {
+  test('DELETE room that in wrong hotel', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/hotels/${hotelID}/rooms/${roomId2}`)
+        .set('Authorization', `Bearer ${ownerToken}`);
+      
+      expect(res.statusCode).toBe(400);
+    });
 
+  test('DELETE room (owner)', async () => {
     //create new room to delete
     const createRes = await request(app)
       .post(`/api/v1/hotels/${hotelID}/rooms`)
@@ -452,6 +463,114 @@ describe('Room API (Integration)', () => {
     expect(res.statusCode).toBe(200);
   });
 
- 
+  test('Delete room that has booking (should fail)', async () => {
+  let newHotelID;
+  let newRoomID;
+  let newBookingID;
+  
+    // 1. create hotel
+    const hotelRes = await request(app)
+      .post('/api/v1/hotels')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: `Hotel_${Date.now()}`,
+        description: "simple description",
+        location: "Sukhumvit Road, Bangkok",
+
+        ownerID: ownerID,
+        ownerEmail : "owner@gmail.com",
+
+        tel: `08${Math.floor(10000000 + Math.random()*90000000)}`,
+        email: `test${Date.now()}@mail.com`,
+
+        district: "Watthana",
+        province: "Bangkok",
+        postalcode: "10110",
+        region: "Central",
+
+        pictures: [
+          "https://example.com/image1.jpg",
+          "https://example.com/image2.jpg"
+        ],
+
+        roomTypes: ["single", "double", "suite"],
+
+        facilities: [
+          "wifi",
+          "parking",
+          "pool",
+          "gym",
+          "restaurant",
+          "spa",
+          "air_conditioning"
+        ],
+
+        status: "available"
+      });
+  
+    expect(hotelRes.statusCode).toBe(201);
+    newHotelID = hotelRes.body.data._id;
+  
+    // 2. create room
+    const roomRes = await request(app)
+      .post(`/api/v1/hotels/${newHotelID}/rooms`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        hotelID: newHotelID,
+        roomType: "single",
+        bedType: "queen",
+        bed: 1,
+        price: 1500,
+        description: "Nice room",
+        picture: ["https://example.com/room1.jpg"],
+        facilities: ["wifi", "air_conditioning"],
+        availableNumber: 5,
+        status: "available",
+        people: 2
+      });
+  
+    expect(roomRes.statusCode).toBe(201);
+    newRoomID = roomRes.body.data._id;
+  
+    // 3. create booking
+    const bookingRes = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        hotelID: newHotelID,
+        user: userID,
+        roomID: newRoomID,
+        checkInDate: '2026-05-01',
+        checkOutDate: '2026-05-02'
+      });
+  
+    expect(bookingRes.statusCode).toBe(201);
+    newBookingID = bookingRes.body.data._id;
+  
+    // 4. try delete room
+    const deleteRes = await request(app)
+      .delete(`/api/v1/hotels/${newHotelID}/rooms/${newRoomID}`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+  
+    expect(deleteRes.statusCode).toBe(400);
+  
+    if (newBookingID) {
+        await request(app)
+          .delete(`/api/v1/bookings/${newBookingID}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+      }
+  
+      if (newRoomID) {
+        await request(app)
+          .delete(`/api/v1/rooms/${newRoomID}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+      }
+  
+      if (newHotelID) {
+        await request(app)
+          .delete(`/api/v1/hotels/${newHotelID}`)
+          .set('Authorization', `Bearer ${adminToken}`);
+      }
+  });
 
 });

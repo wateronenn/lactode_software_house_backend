@@ -91,6 +91,7 @@ beforeAll(async () => {
     });
 
   userToken = userRes.body.token;
+  userID = userRes.body._id;
 });
 
 afterAll(async () => {
@@ -124,6 +125,42 @@ describe('Hotel API (Integration Advanced)', () => {
       .send(newRandomHotel());
 
     expect(res.statusCode).toBe(403);
+  });
+
+  test('CREATE hotel (invalid): no owner email', async () => {
+    const res = await request(app)
+    .post('/api/v1/hotels')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({
+      ...newRandomHotel(),
+      ownerEmail: ""
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('CREATE hotel (invalid) : no user email', async () => {
+    const res = await request(app)
+    .post('/api/v1/hotels')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({
+      ...newRandomHotel(),
+      ownerEmail: "faked@gmail.com"
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('CREATE hotel (invalid) : email is not hotelOwner', async () => {
+    const res = await request(app)
+    .post('/api/v1/hotels')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({
+      ...newRandomHotel(),
+      ownerEmail: "user@gmail.com"
+    });
+
+    expect(res.statusCode).toBe(400);
   });
 
   // ❌ CREATE (user → 403)
@@ -269,5 +306,83 @@ describe('Hotel API (Integration Advanced)', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data).toEqual({});
   });
+
+
+
+test('Delete hotel that has booking (should fail)', async () => {
+let newHotelID;
+let newRoomID;
+let newBookingID;
+
+  // 1. create hotel
+  const hotelRes = await request(app)
+    .post('/api/v1/hotels')
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send(newRandomHotel());
+
+  expect(hotelRes.statusCode).toBe(201);
+  newHotelID = hotelRes.body.data._id;
+
+  // 2. create room
+  const roomRes = await request(app)
+    .post(`/api/v1/hotels/${newHotelID}/rooms`)
+    .set('Authorization', `Bearer ${adminToken}`)
+    .send({
+      hotelID: newHotelID,
+      roomType: "single",
+      bedType: "queen",
+      bed: 1,
+      price: 1500,
+      description: "Nice room",
+      picture: ["https://example.com/room1.jpg"],
+      facilities: ["wifi", "air_conditioning"],
+      availableNumber: 5,
+      status: "available",
+      people: 2
+    });
+
+  expect(roomRes.statusCode).toBe(201);
+  newRoomID = roomRes.body.data._id;
+
+  // 3. create booking
+  const bookingRes = await request(app)
+    .post('/api/v1/bookings')
+    .set('Authorization', `Bearer ${userToken}`)
+    .send({
+      hotelID: newHotelID,
+      user: userID,
+      roomID: newRoomID,
+      checkInDate: '2026-05-01',
+      checkOutDate: '2026-05-02'
+    });
+
+  expect(bookingRes.statusCode).toBe(201);
+  newBookingID = bookingRes.body.data._id;
+
+  // 4. try delete hotel
+  const deleteRes = await request(app)
+    .delete(`/api/v1/hotels/${newHotelID}`)
+    .set('Authorization', `Bearer ${adminToken}`);
+
+  expect(deleteRes.statusCode).toBe(400);
+
+  if (newBookingID) {
+      await request(app)
+        .delete(`/api/v1/bookings/${newBookingID}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+    }
+
+    if (newRoomID) {
+      await request(app)
+        .delete(`/api/v1/rooms/${newRoomID}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+    }
+
+    if (newHotelID) {
+      await request(app)
+        .delete(`/api/v1/hotels/${newHotelID}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+    }
+});
 
 });
