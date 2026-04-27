@@ -44,6 +44,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
     "node-fetch": "^3.3.2",
+    "node-mocks-http": "^1.17.2",
     "ratelimit": "^0.0.4",
     "swagger": "^0.7.5",
     "swagger-jsdoc": "^6.2.8",

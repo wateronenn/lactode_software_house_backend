@@ -3,6 +3,10 @@ require('dotenv').config({ path: './config/config.env' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../app');
+const Booking = require('../models/Booking')
+const Hotel = require('../models/Hotel')
+const controller = require('../controllers/bookings')
+const Room = require('../models/Room')
 jest.setTimeout(20000); // เพิ่มเวลาเป็น 20 วิ
 
 let adminToken;
@@ -20,6 +24,13 @@ let userID2;
 // =======================
 // 🔥 DATA GENERATOR
 // =======================
+
+const mockRes = () => {
+  const res = {};
+  res.status = jest.fn().mockReturnValue(res);
+  res.json = jest.fn().mockReturnValue(res);
+  return res;
+};
 
 const newHotel = () => ({
   name: `Hotel_${Date.now()}`,
@@ -114,25 +125,38 @@ beforeAll(async () => {
 // =======================
 
 afterAll(async () => {
-
-  const bookingsRes = await request(app)
-    .get('/api/v1/bookings')
-    .set('Authorization', `Bearer ${adminToken}`);
-  
-  for (const booking of bookingsRes.body.data) {
-    await request(app)
-      .delete(`/api/v1/bookings/${booking._id}`)
+  try {
+    const bookingsRes = await request(app)
+      .get('/api/v1/bookings')
       .set('Authorization', `Bearer ${adminToken}`);
+
+    if (bookingsRes.statusCode === 200 && Array.isArray(bookingsRes.body.data)) {
+      await Promise.allSettled(
+        bookingsRes.body.data.map((booking) =>
+          request(app)
+            .delete(`/api/v1/bookings/${booking._id}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+        )
+      );
+    }
+
+    await request(app)
+      .delete(`/api/v1/hotels/${hotelID}/rooms/${roomID}`)
+      .set('Authorization', `Bearer ${ownerToken}`);
+
+    await request(app)
+      .delete(`/api/v1/hotels/${hotelID}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+  } catch (err) {
+    console.error('Cleanup failed:', err.message);
   }
-  await request(app)
-  .delete(`/api/v1/hotels/${hotelID}/rooms/${roomID}`)
-  .set('Authorization', `Bearer ${ownerToken}`);
 
-  await request(app)
-    .delete(`/api/v1/hotels/${hotelID}`)
-    .set('Authorization', `Bearer ${adminToken}`);
+  await mongoose.disconnect();
+});
 
-  await mongoose.connection.close();
+afterEach(() => {
+  jest.restoreAllMocks();
 });
 
 // =======================
@@ -328,6 +352,19 @@ test('User get single booking', async () => {
     expect(res.statusCode).toBe(400);
   });
 
+  test('CREATE booking invalid hotel ID', async () => {
+    const newId = new mongoose.Types.ObjectId();
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        ...newBooking(userID, hotelID, roomID),
+        hotelID: newId
+      });
+
+    expect(res.statusCode).toBe(400);
+  });
+
   test('CREATE booking roomID not exist', async () => {
     const res = await request(app)
       .post('/api/v1/bookings')
@@ -432,6 +469,14 @@ test('User get single booking', async () => {
       .send({ checkInDate: '2026-06-01', checkOutDate: '2026-06-02' });
     expect(res.statusCode).toBe(403);
   });
+  test('User update not found booking', async () => {
+    const newId = new mongoose.Types.ObjectId();
+    const res = await request(app)
+      .put(`/api/v1/bookings/${newId}`)
+      .set('Authorization', `Bearer ${userToken2}`)
+      .send({ checkInDate: '2026-06-01', checkOutDate: '2026-06-02' });
+    expect(res.statusCode).toBe(404);
+  });
 
   test('Owner update booking in owned hotel', async () => {
     const res = await request(app)
@@ -534,4 +579,147 @@ test('User get single booking', async () => {
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.statusCode).toBe(404);
   });
+});
+
+test('getManyBookings → 500', async () => {
+  Booking.find = jest.fn().mockReturnValue({
+    populate: jest.fn().mockRejectedValue(new Error('DB fail'))
+  });
+
+  const req = {
+    user: { id: '123', role: 'admin' }
+  };
+
+  const res = mockRes();
+
+  await controller.getManyBookings(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(500);
+});
+
+test('getManyBookings hotelOwner → 500', async () => {
+  Hotel.find = jest.fn().mockRejectedValue(new Error('DB fail'));
+
+  const req = {
+    user: { id: '123', role: 'hotelOwner' }
+  };
+
+  const res = mockRes();
+
+  await controller.getManyBookings(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(500);
+});
+
+test('getSingleBooking → 500', async () => {
+  Booking.findById = jest.fn().mockReturnValue({
+    populate: jest.fn().mockRejectedValue(new Error('DB fail'))
+  });
+
+  const req = {
+    params: { id: new mongoose.Types.ObjectId().toString() },
+    user: { id: '123', role: 'admin' }
+  };
+
+  const res = mockRes();
+
+  await controller.getSingleBooking(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(500);
+});
+
+test('addBooking → 500', async () => {
+  Hotel.findById = jest.fn().mockResolvedValue({ _id: 'h1' });
+  Room.findById = jest.fn().mockResolvedValue({ _id: 'r1', amount: 10 });
+
+  Booking.countDocuments = jest.fn().mockRejectedValue(new Error('DB fail'));
+
+  const req = {
+    body: {
+      hotelID: new mongoose.Types.ObjectId().toString(),
+      roomID: new mongoose.Types.ObjectId().toString(),
+      checkInDate: '2026-08-01',
+      checkOutDate: '2026-08-02'
+    },
+    user: { id: '123', role: 'user' }
+  };
+
+  const res = mockRes();
+
+  await controller.addBooking(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(500);
+});
+
+test('updateBooking → 500', async () => {
+  Booking.findById = jest.fn().mockReturnValue({
+    populate: jest.fn().mockRejectedValue(new Error('DB fail'))
+  });
+
+  const req = {
+    params: { id: '123' },
+    body: { checkInDate: '2026-08-01', checkOutDate: '2026-08-02' },
+    user: { id: '123', role: 'admin' }
+  };
+
+  const res = mockRes();
+
+  await controller.updateBooking(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(500);
+});
+
+test('deleteBooking → 500', async () => {
+  Booking.findById = jest.fn().mockReturnValue({
+    populate: jest.fn().mockRejectedValue(new Error('DB fail'))
+  });
+
+  const req = {
+    params: { id: '123' },
+    user: { id: '123', role: 'admin' }
+  };
+
+  const res = mockRes();
+
+  await controller.deleteBooking(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(500);
+});
+
+test('should return 400 when room is fully booked', async () => {
+  const fakeHotelId = new mongoose.Types.ObjectId();
+  const fakeRoomId = new mongoose.Types.ObjectId();
+
+  // mock hotel exists
+  Hotel.findById = jest.fn().mockResolvedValue({ _id: fakeHotelId });
+
+  // mock room with capacity = 1
+  Room.findById = jest.fn().mockResolvedValue({
+    _id: fakeRoomId,
+    amount: 1
+  });
+
+  // mock already 1 booking
+  Booking.countDocuments = jest.fn().mockResolvedValue(1);
+
+  const req = {
+    body: {
+      hotelID: fakeHotelId.toString(),
+      roomID: fakeRoomId.toString(),
+      checkInDate: '2026-08-01',
+      checkOutDate: '2026-08-02'
+    },
+    user: { id: '123', role: 'user' }
+  };
+
+  const res = mockRes();
+
+  await controller.addBooking(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(400);
+  expect(res.json).toHaveBeenCalledWith(
+    expect.objectContaining({
+      message: "Room fully booked"
+    })
+  );
 });
