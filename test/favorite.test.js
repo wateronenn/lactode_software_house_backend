@@ -9,9 +9,9 @@ let userToken;
 let ownerToken;
 let adminToken;
 
-let hotelID1 = "69e508b860a9cab69f2b22bd"; // Marina Bay resort
-let hotelID2 = "69e508b860a9cab69f2b22bc"; //Royal Thai Palace Hotel
-let hotelID3 = "69e508b860a9cab69f2b22c4"; // Temple View Hotel
+let hotelID1;
+let hotelID2;
+let hotelID3;
 let invalidID = "invalid-id";
 beforeAll( async ()=>{
     await mongoose.connect(process.env.MONGO_URL);
@@ -35,6 +35,15 @@ beforeAll( async ()=>{
     await request(app)
     .delete('/api/v1/favorites')
     .set('Authorization', `Bearer ${userToken}`);
+
+    const hotelRes = await request(app)
+        .get('/api/v1/hotels')
+        .set('Authorization', `Bearer ${userToken}`);
+    
+    hotelID1 = hotelRes.body.data[0]._id;
+    hotelID2 = hotelRes.body.data[1]._id;
+    hotelID3 = hotelRes.body.data[2]._id;
+
 })
 
 afterAll(async () => {
