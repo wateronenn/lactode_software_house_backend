@@ -70,7 +70,6 @@ describe('DELETE ALL /favorites', () => {
     const res = await request(app)
       .delete(`/api/v1/favorites`)
       .set('Authorization', `Bearer ${userToken}`);
-    console.log(res.body)
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toBe('All favorites removed');
@@ -93,7 +92,6 @@ describe('POST /favorites/:hotelID', () => {
     const res = await request(app)
       .post(`/api/v1/favorites/${hotelID1}`)
       .set('Authorization', `Bearer ${userToken}`);
-    console.log(res.body)
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.count).toBe(1);
@@ -104,7 +102,6 @@ describe('POST /favorites/:hotelID', () => {
     const res = await request(app)
       .post(`/api/v1/favorites/${hotelID2}`)
       .set('Authorization', `Bearer ${userToken}`);
-    console.log(res.body)
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
     expect(res.body.count).toBe(2);
@@ -206,8 +203,6 @@ describe('GET /favorites/compare', () => {
         hotel2: hotelID2
       })
       .set('Authorization', `Bearer ${userToken}`);
-
-    console.log(res.body);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
