@@ -5,3 +5,6 @@
 .vscode
 Dockerfile
 .dockerignore
+.vscode
+coverage
+node_modules

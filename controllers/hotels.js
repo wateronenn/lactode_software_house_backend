@@ -60,6 +60,9 @@ exports.getSingleHotel = async (req, res) => {
     const { hotelID } = req.params;
     const { checkInDate, checkOutDate, people } = req.query;
 
+    const parsedPeople = Number(people);
+    const hasValidPeople = Number.isFinite(parsedPeople) && parsedPeople > 0;
+
     const hotel = await Hotel.findById(hotelID);
 
     if (!hotel) {
@@ -69,11 +72,13 @@ exports.getSingleHotel = async (req, res) => {
       });
     }
 
-    // filter rooms by capacity
-    const rooms = await Room.find({
-      hotelID,
-      people: { $gte: Number(people || 1) }
-    });
+    const roomQuery = { hotelID };
+
+    if (hasValidPeople) {
+      roomQuery.people = { $gte: parsedPeople };
+    }
+
+    const rooms = await Room.find(roomQuery);
 
     let inDate = null;
     let outDate = null;

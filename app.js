@@ -24,14 +24,14 @@ app.use(xss()); //cant use xss because it will cause problem with query string i
 // Rate limiters
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 300000,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const authLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 2000,
+  max: 200000,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
